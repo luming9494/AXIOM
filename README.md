@@ -1,12 +1,16 @@
 <div align="center">
 
-# AXIOM
+<img src="./assets/axiom-banner.svg" alt="AXIOM — Autonomous Research Harness" width="100%" />
 
-### Autonomous eXperimentation & Intelligent Orchestration for Machine Learning
+<br />
 
-**基于 Pi Agent 的科研实验自动化与可信证据 Harness**
+**Autonomous eXperimentation & Intelligent Orchestration for Machine Learning**
 
-*From hypothesis to verifiable evidence.*
+基于 Pi Agent 的科研实验自动化与可信证据 Harness
+
+[![Built on Pi](https://img.shields.io/badge/Built_on-Pi_Agent-1B756F?style=flat-square)](https://github.com/earendil-works/pi)
+![Status](https://img.shields.io/badge/status-early_development-4B6680?style=flat-square)
+![TypeScript](https://img.shields.io/badge/core-TypeScript-3178C6?style=flat-square)
 
 </div>
 
@@ -26,9 +30,9 @@ AXIOM 面向需要反复训练、评估、复现实验的 AI / ML 研究者，�
 - **可靠恢复**：区分 Agent 会话与真实训练任务，避免任务中断后重复启动高成本实验。
 - **结果与论文协作**：从经过核验的实验结果生成对比表和论文分析草稿，并保留来源。
 
-## 🧭 首个落地场景：QSR-DETR
+## 🧭 首个落地场景：私有科研实验工作区
 
-第一阶段先服务于一个真实的计算机视觉科研项目，完成：
+第一阶段先从用户本地的私有机器学习实验工作区入手（不公开其研究名称、论文内容和原始数据），完成：
 
 1. 导入实验配置、日志、评估输出和已有实验记录；
 2. 从原始文件提取指标、建立指标与来源之间的关联；
@@ -36,7 +40,7 @@ AXIOM 面向需要反复训练、评估、复现实验的 AI / ML 研究者，�
 4. 支持自然语言查询实验差异与缺失的消融实验；
 5. 导出标注来源的 Markdown / CSV / LaTeX 实验对比表。
 
-**重要原则：**不能凭模型输出虚构 AP、GPU 耗时、论文引用或训练结果；未被验证的记录必须标记为未验证。
+**重要原则：**不能凭模型输出虚构实验指标、GPU 耗时、论文引用或训练结果；未被验证的记录必须标记为未验证。
 
 ## 🏗️ 计划架构
 
@@ -88,12 +92,14 @@ AXIOM/
 │   └── experiment-runner/      # 未来的 Python GPU Runner
 ├── evals/                      # 业务与 Harness 评测
 ├── examples/
-│   └── qsr-detr/               # 不含隐私数据的示例
+│   └── synthetic-experiment/   # 使用合成数据的公开示例
 └── vendor/
     └── pi/                     # Pi 官方源码（Git submodule，固定上游提交）
 ```
 
 目录结构是目标结构，目前 `vendor/pi` 已作为 Git submodule 接入；其他尚未创建的模块不代表已实现。
+
+架构设计说明：[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)。公开示例只使用合成数据，不包含未发表论文的研究名称、真实实验结果或私有代码。
 
 ## 🛠️ 初步技术选型
 
@@ -117,7 +123,7 @@ AXIOM/
 
 ## 🔒 安全与科研严谨性
 
-- 本地日志、数据集、模型权重与 API Key 默认不提交公开仓库。
+- 本地日志、数据集、模型权重、未发表论文内容与 API Key 默认不提交公开仓库；详见 `.gitignore`。
 - 提交训练、删除产物、终止任务等高成本或不可逆操作必须有明确授权。
 - 真实 GPU 任务由独立 Runner 管理，Agent 会话退出不应导致运行状态丢失。
 - 所有论文结果来自可追溯的实际评估文件，不能由模型编造。

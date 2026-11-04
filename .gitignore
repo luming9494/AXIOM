@@ -1,0 +1,47 @@
+# Credentials and private configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials/
+
+# Unpublished research / local-only work
+private/
+research-private/
+local-research/
+data/
+datasets/
+logs/
+runs/
+mlruns/
+artifacts/
+checkpoints/
+weights/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# Python / ML
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Node / build
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# Local caches / OS
+.cache/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
