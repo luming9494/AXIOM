@@ -90,10 +90,10 @@ AXIOM/
 ├── examples/
 │   └── qsr-detr/               # 不含隐私数据的示例
 └── vendor/
-    └── pi/                     # Pi 原始源码（以 Git subtree 引入）
+    └── pi/                     # Pi 官方源码（Git submodule，固定上游提交）
 ```
 
-目录结构是目标结构，尚未创建的模块不代表已实现。
+目录结构是目标结构，目前 `vendor/pi` 已作为 Git submodule 接入；其他尚未创建的模块不代表已实现。
 
 ## 🛠️ 初步技术选型
 
@@ -125,11 +125,11 @@ AXIOM/
 
 ## 🌱 Pi 上游源码
 
-本项目以 [Pi](https://github.com/earendil-works/pi) 为 Agent 基础。计划将完整上游源码放在 `vendor/pi/`，通过 **Git subtree（squash）** 引入，方便后续追踪与合并上游更新。
+本项目以 [Pi](https://github.com/earendil-works/pi) 为 Agent 基础。已将 Pi 官方仓库以 **Git submodule** 接入 `vendor/pi/`，固定上游提交 `676af1d777ef6f04b6bc8daf4cf3b9b1799cff4d`。首次克隆使用 `git clone --recurse-submodules https://github.com/luming9494/AXIOM.git`，已有本地副本使用 `git submodule update --init --recursive` 拉取完整源码。更新上游时需单独审查 Pi 变更并提交新的子模块指针。
 
 上游由其原作者及贡献者维护，遵循 [MIT License](https://github.com/earendil-works/pi/blob/main/LICENSE)。引用及再分发时保留原始版权与许可说明。AXIOM 本身与 Pi 官方项目无隶属关系。
 
-源码引入完成前，可以先阅读 [Pi SDK 文档](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md) 和 [Pi Extensions 文档](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md)。
+Pi SDK 适配开发时，可以阅读 [Pi SDK 文档](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md) 和 [Pi Extensions 文档](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md)。
 
 ---
 
