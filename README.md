@@ -16,7 +16,7 @@
 
 > **项目阶段：离线实验管理原型 / Offline MVP Prototype**
 >
-> 已实现 JSON 实验清单导入、指标来源数值校验与 SHA-256 记录，以及 Markdown / CSV / LaTeX 对比表导出。Pi 快照问答已接入，但真实模型调用尚未验证。下文的完整科研自动化能力仍是**开发目标**，不代表已完成。
+> 已实现 JSON 实验清单导入、指标来源数值校验与 SHA-256 记录，以及 Markdown / CSV / LaTeX 对比表导出。CLI 与 React Web 前端现已并行提供；Web 支持本地快照导入与可视化，尚无后端。Pi 快照问答已接入 CLI，但真实模型调用尚未验证。下文的完整科研自动化能力仍是**开发目标**，不代表已完成。
 
 ## 🎯 项目介绍
 
@@ -83,7 +83,7 @@ AXIOM/
 ├── docs/                       # 架构、业务规范、开发计划
 ├── apps/
 │   ├── api/                    # 未来的 TypeScript API
-│   └── web/                    # 未来的科研控制台
+│   └── web/                    # 已实现 React 科研工作台前端（本地快照模式）
 ├── packages/
 │   ├── agent/                  # Pi SDK 适配层
 │   ├── harness/                # 上下文 / 证据 / 编排 / 审批
@@ -103,15 +103,15 @@ AXIOM/
 
 ## 🛠️ 初步技术选型
 
-离线实验导入、指标来源校验和表格导出 CLI 已实现；开发及运行方法见 [本地开发说明](docs/DEVELOPMENT.md)。Pi 快照问答入口已接入，真实模型调用尚待配置凭据后验证；自定义工具、数据库和 GPU Runner 尚未实现。
+离线实验导入、指标来源校验和表格导出 CLI 已实现；React Web 前端提供工作台、实验筛选、证据详情、本地 Registry 导入与表格导出。运行 `npm run dev:web` 启动前端；完整方法见 [本地开发说明](docs/DEVELOPMENT.md)。Web 不重新核验原始文件，数据仅存在内存中。Pi 快照问答入口已接入 CLI，真实模型调用尚待配置凭据后验证；Web 后端、自定义工具、数据库和 GPU Runner 尚未实现。
 
 - **Agent**：[`@earendil-works/pi-coding-agent`](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) / Pi TypeScript SDK
 - **主服务**：Node.js 22.19+、TypeScript
 - **科研执行**：Python、PyTorch、SSH / Runner API（后续）
 - **实验记录**：PostgreSQL / SQLite、MLflow（随实现阶段评估）
-- **交互**：CLI 优先，随后 React Web
+- **交互**：CLI + React Web（前端预览已实现，API 待接入）
 - **扩展能力**：Pi Extensions、Skills、MCP
-- **质量**：Vitest / pytest、固定实验任务集、来源追溯与回归测试
+- **质量**：Node.js test runner + Playwright；后续添加 Python 测试与业务评测
 
 ## ✅ 开发路线
 

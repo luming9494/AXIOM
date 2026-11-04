@@ -38,6 +38,8 @@ dist/
 build/
 .next/
 coverage/
+test-results/
+playwright-report/
 # 忽略 TypeScript 增量编译、测试缓存和包管理器调试日志，保留依赖锁文件。
 *.tsbuildinfo
 .nyc_output/

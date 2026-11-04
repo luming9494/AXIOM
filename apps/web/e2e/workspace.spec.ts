@@ -1,0 +1,54 @@
+import { test, expect } from '@playwright/test';
+import { demoRegistry } from '../src/registry';
+
+test('desktop workspace supports search, evidence, import, selection and export', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('让每一次实验');
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await page.getByRole('textbox', { name: '搜索实验' }).fill('baseline');
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await page.getByRole('button', { name: '查看 synthetic-baseline 详情' }).click();
+  await expect(page.getByRole('dialog')).toContainText('浏览器未读取来源文件');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('textbox', { name: '搜索实验' }).clear();
+  await page.getByRole('checkbox', { name: '选择 synthetic-variant', exact: true }).check();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '导出 (1)', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('axiom-comparison.md');
+  const stream = await download.createReadStream();
+  const chunks = [];
+  for await (const chunk of stream!) chunks.push(chunk);
+  const content = Buffer.concat(chunks).toString();
+  expect(content).toContain('synthetic-variant');
+  expect(content).not.toContain('synthetic-baseline');
+  expect(content).toContain('未重新核验来源文件');
+  const registry = demoRegistry();
+  registry.runs[0]!.runId = 'imported-run';
+  registry.evidence[0]!.runId = 'imported-run';
+  await page.locator('input[type=file]').setInputFiles({ name: 'registry.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(registry)) });
+  await expect(page.locator('tbody')).toContainText('imported-run');
+  await expect(page.getByText('本地快照模式')).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+  await expect(page.getByRole('status')).toContainText('Registry JSON');
+  await expect(page.locator('tbody')).toContainText('imported-run');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: 'test-results/desktop.png', fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test('mobile navigation and preview do not overflow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.screenshot({ path: 'test-results/mobile.png', fullPage: true });
+  await page.getByRole('button', { name: '打开导航' }).click();
+  await page.getByRole('button', { name: '研究助手' }).click();
+  await expect(page.getByRole('heading', { name: '先有证据，再有答案。' })).toBeVisible();
+  await expect(page.getByText('Web 模型接口尚未连接。', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: '返回实验管理' }).click();
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+});
