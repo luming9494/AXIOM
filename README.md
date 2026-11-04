@@ -14,9 +14,9 @@
 
 </div>
 
-> **项目阶段：初始化 / Design & Bootstrap**
+> **项目阶段：离线实验管理原型 / Offline MVP Prototype**
 >
-> AXIOM 目前正在搭建基础架构。下文的业务能力是**开发目标**，不是已经完成的功能；请以仓库中的代码、测试与里程碑为准。
+> 已实现 JSON 实验清单导入、指标来源数值校验与 SHA-256 记录，以及 Markdown / CSV / LaTeX 对比表导出。Pi 快照问答已接入，但真实模型调用尚未验证。下文的完整科研自动化能力仍是**开发目标**，不代表已完成。
 
 ## 🎯 项目介绍
 
@@ -103,6 +103,8 @@ AXIOM/
 
 ## 🛠️ 初步技术选型
 
+离线实验导入、指标来源校验和表格导出 CLI 已实现；开发及运行方法见 [本地开发说明](docs/DEVELOPMENT.md)。Pi 快照问答入口已接入，真实模型调用尚待配置凭据后验证；自定义工具、数据库和 GPU Runner 尚未实现。
+
 - **Agent**：[`@earendil-works/pi-coding-agent`](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) / Pi TypeScript SDK
 - **主服务**：Node.js 22.19+、TypeScript
 - **科研执行**：Python、PyTorch、SSH / Runner API（后续）
@@ -113,9 +115,9 @@ AXIOM/
 
 ## ✅ 开发路线
 
-- [ ] **MVP 0**：接入 Pi SDK，完成本地对话与自定义科研工具示例
-- [ ] **MVP 1**：实验文件导入、结构化 Run Registry、指标来源追溯
-- [ ] **MVP 2**：科研 Context Engine、配置可比性校验、实验对比表
+- [ ] **MVP 0（部分完成）**：Pi SDK 快照问答已接入；待验证真实模型调用、实现自定义科研工具
+- [ ] **MVP 1（基础原型完成）**：JSON 清单导入、Run Registry JSON 输出、指标来源核验已实现；待支持真实日志/配置适配与持久化管理
+- [ ] **MVP 2（部分完成）**：三种格式对比表、数据集与评估协议一致性检查已实现；待实现 Context Engine 与完整配置可比性校验
 - [ ] **Phase 2**：MLflow 集成、实验计划、执行审批
 - [ ] **Phase 3**：远程 GPU Runner、任务去重、监控与失败恢复
 - [ ] **Phase 4**：论文结果关联、Web 控制台、业务 Evals

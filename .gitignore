@@ -38,9 +38,29 @@ dist/
 build/
 .next/
 coverage/
+# 忽略 TypeScript 增量编译、测试缓存和包管理器调试日志，保留依赖锁文件。
+*.tsbuildinfo
+.nyc_output/
+.vitest/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 默认 CLI 输出及临时验证文件；公开合成样例仍纳入版本管理。
+/registry.json
+/comparison.md
+/comparison.csv
+/comparison.tex
+/.cache-registry.json
+/.cache-comparison.*
 
 # Local caches / OS
 .cache/
+# 忽略 Python 测试与静态检查缓存。
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .DS_Store
 Thumbs.db
 .vscode/

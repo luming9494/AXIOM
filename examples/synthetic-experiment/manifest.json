@@ -1,0 +1,4 @@
+[
+  { "runId": "synthetic-baseline", "codeRevision": "synthetic-v1", "dataset": "synthetic-test-v1", "protocol": "accuracy-v1", "seed": 42, "config": { "learningRate": 0.001 }, "metrics": [{ "name": "accuracy", "value": 0.8, "artifact": "baseline.json", "key": "accuracy" }] },
+  { "runId": "synthetic-variant", "codeRevision": "synthetic-v1", "dataset": "synthetic-test-v1", "protocol": "accuracy-v1", "seed": 42, "config": { "learningRate": 0.002 }, "metrics": [{ "name": "accuracy", "value": 0.85, "artifact": "variant.json", "key": "accuracy" }] }
+]

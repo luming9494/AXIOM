@@ -1,0 +1,14 @@
+{
+  "name": "axiom-research",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.19.0" },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx --test tests/research.test.ts",
+    "axiom": "tsx src/cli.ts"
+  },
+  "dependencies": { "@earendil-works/pi-coding-agent": "1.5.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "tsx": "^4.0.0", "typescript": "^5.9.0" }
+}
