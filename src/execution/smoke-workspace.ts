@@ -7,7 +7,12 @@ import { runProcess } from './process.js';
 
 const digest = (text: string | Buffer) => createHash('sha256').update(text).digest('hex');
 const text = (value: unknown): value is string => typeof value === 'string';
-const protectedScripts = ['task.json', 'common.py', 'checks.py', 'train.py', 'evaluate.py', 'judge.py', 'review_candidate.py'];
+const protectedScripts = ['task.json', 'common.py', 'checks.py', 'train.py', 'evaluate.py', 'judge.py', 'review_candidate.py', 'validate_only.py'];
+
+export interface ValidationResult extends Record<string, unknown> {
+  protocol: string; split: 'validation'; level: 'full'; accuracy: number; loss: number;
+  samples: number; checkpoint_sha256: string; dataset_access_log: string[];
+}
 
 export class SmokeWorkspace {
   readonly candidate: string;
@@ -19,19 +24,19 @@ export class SmokeWorkspace {
   private readModelHash?: string;
   private smokeHash?: string;
   private commandIndex = 0;
-  private constructor(readonly repo: string, readonly root: string, readonly python: string) {
+  private constructor(readonly repo: string, readonly root: string, readonly python: string, readonly mode: 'smoke' | 'optimize') {
     this.candidate = join(root, 'candidate');
   }
 
-  static async create(repo: string, python: string): Promise<SmokeWorkspace> {
+  static async create(repo: string, python: string, mode: 'smoke' | 'optimize' = 'smoke'): Promise<SmokeWorkspace> {
     repo = await realpath(repo);
     python = await realpath(python);
     const parent = join(repo, 'private');
     await mkdir(parent, { recursive: true });
     const rel = relative(repo, await realpath(parent));
     if (rel === '..' || rel.startsWith(`..`) || isAbsolute(rel)) throw new Error('private directory must remain inside repository');
-    const root = await mkdtemp(join(parent, 'wp02-'));
-    const workspace = new SmokeWorkspace(repo, root, python);
+    const root = await mkdtemp(join(parent, mode === 'smoke' ? 'wp02-' : 'wp03-'));
+    const workspace = new SmokeWorkspace(repo, root, python, mode);
     await mkdir(workspace.candidate);
     await mkdir(join(root, 'before'));
     await mkdir(join(root, 'tmp'));
@@ -87,6 +92,41 @@ export class SmokeWorkspace {
     return JSON.parse(await this.command('review_candidate.py', ['--candidate', path], signal)) as Record<string, unknown>;
   }
 
+  private fullPath(role: 'baseline' | 'candidate'): string {
+    if (this.mode !== 'optimize' || !['baseline', 'candidate'].includes(role)) throw new Error('Full experiment unavailable in this mode');
+    return join(this.root, role === 'baseline' ? 'baseline' : 'candidate-run');
+  }
+
+  async runFull(role: 'baseline' | 'candidate', signal?: AbortSignal): Promise<ValidationResult> {
+    await this.verifyTrusted();
+    const output = this.fullPath(role);
+    const source = role === 'baseline' ? join(this.root, 'before') : this.candidate;
+    await this.review(source, signal);
+    await this.command('checks.py', ['--candidate', source], signal);
+    await this.command('train.py', ['--candidate', source, '--output', output, '--level', 'full'], signal);
+    await this.command('validate_only.py', ['--run', output, '--output', join(output, 'validation.json')], signal);
+    return this.validateFull(role, signal);
+  }
+
+  async validateFull(role: 'baseline' | 'candidate', signal?: AbortSignal): Promise<ValidationResult> {
+    await this.verifyTrusted();
+    const output = this.fullPath(role);
+    const result = JSON.parse(await this.command('validate_only.py', ['--run', output], signal)) as ValidationResult;
+    if (result.protocol !== 'tiny-xor-v1' || result.split !== 'validation' || result.level !== 'full' || result.samples !== 512 || !Number.isFinite(result.accuracy) || result.accuracy < 0 || result.accuracy > 1 || !Number.isFinite(result.loss) || JSON.stringify(result.dataset_access_log) !== '["validation"]') throw new Error('Invalid full validation evidence');
+    await this.verifyTrusted();
+    return result;
+  }
+
+  async exportSelected(role: 'baseline' | 'candidate', signal?: AbortSignal): Promise<string> {
+    await this.validateFull(role, signal);
+    const selected = join(this.root, 'selected');
+    await mkdir(selected);
+    await mkdir(join(selected, 'candidate'));
+    for (const name of ['candidate/model.py', 'candidate/config.json', 'checkpoint.pt', 'run.json', 'history.json', 'validation.json']) await copyFile(join(this.fullPath(role), name), join(selected, name));
+    await this.command('validate_only.py', ['--run', selected], signal);
+    return 'selected/';
+  }
+
   // All operations share a queue; read/edit/check/smoke cannot race within an assistant batch.
   invoke(name: string, input: Record<string, unknown>, actor: 'model' | 'test' = 'model', signal?: AbortSignal): Promise<Record<string, unknown>> {
     const execute = async () => {
@@ -126,7 +166,7 @@ export class SmokeWorkspace {
       await mkdir(staged);
       await writeFile(join(staged, 'model.py'), input.content, { flag: 'wx' });
       const policy = await this.review(staged, signal);
-      if (policy.kind !== 'mlp') throw new Error('This task requires a small MLP with at least two Linear layers and an activation');
+      if (this.mode === 'smoke' && policy.kind !== 'mlp') throw new Error('This task requires a small MLP with at least two Linear layers and an activation');
       signal?.throwIfAborted();
       await writeFile(path, input.content);
       const diff = createTwoFilesPatch('a/model.py', 'b/model.py', this.original, input.content);
@@ -145,11 +185,11 @@ export class SmokeWorkspace {
       }
       if (this.attemptedSmoke) throw new Error('WP-02 allows one Smoke attempt per workspace');
       this.attemptedSmoke = true;
-      if (policy.kind !== 'mlp') throw new Error('Modify the baseline to an approved MLP before Smoke');
+      if (this.mode === 'smoke' && policy.kind !== 'mlp') throw new Error('Modify the baseline to an approved MLP before Smoke');
       const smoke = join(this.root, 'smoke');
       await this.command('checks.py', ['--candidate', this.candidate], signal);
       await this.command('train.py', ['--candidate', this.candidate, '--output', smoke, '--level', 'smoke'], signal);
-      await this.command('evaluate.py', ['--run', smoke, '--output', join(smoke, 'validation.json')], signal);
+      await this.command(this.mode === 'optimize' ? 'validate_only.py' : 'evaluate.py', ['--run', smoke, '--output', join(smoke, 'validation.json')], signal);
       this.smokeHash = digest(await readFile(await this.file('model.py')));
       return { status: 'executed', level: 'smoke', artifact: 'smoke/', result_tool: 'read_smoke_result', note: 'Read real artifacts with read_smoke_result before judging success; no formal score claim.' };
     }
@@ -157,7 +197,7 @@ export class SmokeWorkspace {
       if (!this.smokeHash) throw new Error('No successful Smoke artifacts yet');
       if (digest(await readFile(await this.file('model.py'))) !== this.smokeHash) throw new Error('Candidate changed after Smoke');
       const smoke = join(this.root, 'smoke');
-      const verified = JSON.parse(await this.command('evaluate.py', ['--run', smoke], signal)) as Record<string, unknown>;
+      const verified = JSON.parse(await this.command(this.mode === 'optimize' ? 'validate_only.py' : 'evaluate.py', ['--run', smoke], signal)) as Record<string, unknown>;
       const metadata = JSON.parse(await readFile(join(smoke, 'run.json'), 'utf8')) as Record<string, unknown>;
       if (metadata.level !== 'smoke' || metadata.epochs_executed !== 2 || metadata.train_samples !== 16) throw new Error('Unexpected Smoke scope');
       return { status: 'passed', level: 'smoke', epochs: metadata.epochs_executed, train_samples: metadata.train_samples, parameters: metadata.parameter_count, validation: verified, model_sha256: this.smokeHash, artifacts: ['smoke/checkpoint.pt', 'smoke/history.json', 'smoke/run.json', 'smoke/validation.json', 'patch.diff'], note: 'Proves only training/save/load works; not full model performance or autonomous optimization.' };

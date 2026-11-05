@@ -2,7 +2,7 @@
 
 > **当前文档记录的是已经存在的离线原型，不是 AXIOM 未来的完整 Agent。**  
 > 项目需求已调整为自主机器学习工程 Agent：能在明确规则与资源预算下**读代码、改代码、跑训练、评估与迭代**。新目标请先看 [产品需求](PRODUCT_REQUIREMENTS.md)、[架构](ARCHITECTURE.md)、[CLI 里程碑](CLI_DEVELOPMENT_PLAN.md)、[低成本评测](EVALUATION.md)。  
-> 原有 `src/agent.ts` 的 `ask` 入口仍为 `tools: []` 的快照问答；新增 `src/agent/smoke-agent.ts` 为 WP-02 受限执行验收入口，已真实验证读代码、候选编辑与 Smoke，不是完整 Optimize。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
+> 原有 `src/agent.ts` 的 `ask` 入口仍为 `tools: []` 的快照问答；`src/agent/smoke-agent.ts` 为 WP-02 受限 Smoke 验收入口，`src/agent/optimize-agent.ts` 为已实测的 WP-03 单候选自主训练/验证入口；尚非完整多轮 Optimize。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
 
 
 要求 Node.js >=22.19.0，安装依赖后运行：
@@ -78,7 +78,25 @@ npm run axiom -- smoke-agent --allow-reviewed-code
 
 运行后查看 `report.md`、`summary.json`、`patch.diff`、`pi-events.jsonl`、`operations.jsonl` 及 `smoke/`。自然语言回复可能有路径错误，产物位置以程序报告为准。验收未满足时命令失败并保留轨迹。完整说明见 [WP-02 实测记录](WP02_VALIDATION.md)。
 
-本次仅证明真实操作链；自主优化属于 WP-03，多轮实验和预算属于 WP-04。请求/工具次数及超时上限只是该验收的防失控措施。
+WP-02 本身仅证明真实操作链；单候选自主优化见下一节，多轮实验和预算属于 WP-04。请求/工具次数及超时上限只是该验收的防失控措施。
+
+## WP-03：单候选自主优化
+
+```bash
+# 有真实 CPU 训练开销，无 LLM/API 调用，默认 npm test 不执行此项
+npm run test:optimize-executor
+
+# 有模型 API 费用；显式授权可信 Tiny Task 的受限代码执行
+npm run axiom -- optimize-once --allow-reviewed-code
+```
+
+环境与 WP-02 相同，需要 Node.js >=22.19.0、CPU PyTorch、`.venv` 或 `AXIOM_PYTHON`，真实模型调用还需本地密钥。`test:ml` 使用当前激活的 `python`；未激活虚拟环境时可直接运行 `.venv/Scripts/python.exe -m unittest discover -s tests/python -v`（Windows）或 `.venv/bin/python -m unittest discover -s tests/python -v`（POSIX）。不要为测试修改全局 Python。
+
+WP-03 只允许一次接受的 `model.py` 编辑，配置固定只读。先训练真实 Baseline，再由模型自行提出候选，经 Smoke 后完整训练一次。工具只开放 validation 评估；先独立重载、读指标，再由模型提出 keep/revert，程序复核严格提升规则，错误决定会被拒绝。
+
+真实运行目录为 `private/wp03-*`。查看 `proposal.json`、`baseline/validation.json`、`candidate-run/validation.json`、`decision.json`、`selected/`、`patch.diff`、`pi-events.jsonl` 和 `report.md`。`selected/` 是最终交付；回退时为原 Baseline，不删除失败候选证据。失败工作流保留已有日志，但不保证所有失败阶段都能生成完整交付。
+
+首次真实验收验证准确率 0.5 → 0.998046875，程序保留模型；另有真实 CPU 持平回退回归。不是最终测试达标声明，也未验证统计显著性。不做多轮、GPU、完整预算或任意代码沙箱。详见 [WP-03 实测记录](WP03_VALIDATION.md)。
 
 ## Pi 问答
 
@@ -88,6 +106,6 @@ npm run axiom -- smoke-agent --allow-reviewed-code
 npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较实验差异"
 ```
 
-此命令会把实验快照发送至配置的模型服务。会话使用内存历史，不加载扩展、Skills 或执行工具。当前是快照问答入口，尚无自定义科研工具或训练能力。
+此命令会把实验快照发送至配置的模型服务。会话使用内存历史，不加载扩展、Skills 或执行工具。`ask` 本身是快照问答入口，没有工具或训练能力；需要执行任务时使用上面的独立授权入口。
 
 SDK 固定为 npm 1.5.0，与 `vendor/pi` 子模块源码指针独立管理。模型调用需要实际凭据，离线测试不会调用模型。

@@ -2,7 +2,7 @@
 
 > v0.3 · 2026-11-05 · **新的开发顺序**：能读/改代码并跑出真实结果的 Agent → 预算约束的 Optimize → Ablate / Reproduce → GPU Runner → 可选 Web。
 >
-> **执行进度更新**：WP-02 真实读/改代码、Smoke 与权限拒绝已通过，见 [实测记录](WP02_VALIDATION.md)。按最新验收口径，接着 WP-03 做单轮自主优化，WP-04 做多轮与预算；具体工作包以 [实施计划](IMPLEMENTATION_PLAN.md) 为准，下文“阶段”编号不是 WP 编号。
+> **执行进度更新**：WP-02 真实读/改代码、Smoke 与权限拒绝已通过；WP-03 单候选自主优化也已实测通过（独立 validation 提升与程序核验的保留决定，无最终测试）。见 [WP-02](WP02_VALIDATION.md) / [WP-03](WP03_VALIDATION.md)。下一工作包 WP-04 做多轮与预算；具体以 [实施计划](IMPLEMENTATION_PLAN.md) 为准，下文“阶段”编号不是 WP 编号。
 > 完整产品边界：[PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) · 测试：[EVALUATION.md](EVALUATION.md)
 
 ## 0. CLI 体验目标
@@ -38,7 +38,7 @@ AXIOM → 读取任务规则/仓库 → 建立基线
 | Pi SDK 快照问答入口 | 已接入但未验证真实模型调用 | `src/agent.ts`，当前 `tools: []` |
 | React 离线 Web 原型 | 已存在，当前暂缓 | `apps/web/`，无 Web Agent 后端 |
 | 自定义 Tool Calling / Agent 编辑代码 | **WP-02 已实测** | 受限模型编辑 + Smoke + 结果读取，不是完整优化 |
-| 小规模模型训练闭环 | **未实现** | 新 MVP |
+| 单候选模型训练/验证/选择 | **WP-03 已实测** | `optimize-once`；自主方案、验证提升与真实 CPU 无提升回退回归，不是完整多轮 MVP |
 | Budgeted Experiment Loop | **未实现** | 主要 Harness 自研模块 |
 | GPU Runner / 恢复 | **未实现** | 后续任务 |
 

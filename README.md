@@ -15,7 +15,7 @@
 </div>
 
 > **项目状态：Early Prototype / 需求已明确，完整执行型 Agent 尚未实现。**  
-> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**WP-02 已验证 Pi 真实读取代码、在受限候选副本中修改 MLP 并运行 Smoke；完整训练优化、多轮实验预算与 GPU 调度仍待开发。**
+> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**WP-02 已验证真实读/改代码与 Smoke；WP-03 已验证单候选自主改进、完整 Tiny Task 训练、独立验证和指标驱动的保留/回退。多轮实验预算、完整任务交付和 GPU 调度仍待开发。**
 
 ## What is AXIOM?
 
@@ -69,8 +69,9 @@ AXIOM Experiment Loop
 | React Web 实验快照原型 | 🟡 已有离线页面，当前暂停开发 |
 | Tiny PyTorch 离线训练与独立判题 | ✅ WP-01 基础版；人工 Baseline/参考改动，非 Agent 优化，见[任务说明](examples/tiny-ml-task/README.md) |
 | Agent 读/改代码并运行 Smoke | ✅ WP-02 真实 Pi Tool Calling 已验证；含越界写入/非法命令拒绝，见[实测记录](docs/WP02_VALIDATION.md) |
-| Agent 自主改进并完成正式训练 | ⬜ WP-03 待实现；Smoke 不等于模型优化 |
-| 任务约束、预算、实验反馈与有限迭代 | ⬜ 尚未实现 |
+| Agent 自主提出单候选、完整训练与独立验证 | ✅ WP-03 已实测；只使用 validation，见[实测记录](docs/WP03_VALIDATION.md) |
+| 指标驱动的保留/回退 | ✅ 单候选已实现；无提升回退有真实 CPU 回归，不代表完整预算系统 |
+| 多轮实验、任务级预算与停止策略 | ⬜ WP-04 待实现 |
 | Optimize / Reproduce / Ablate 完整工作流 | ⬜ 尚未实现 |
 | 远程 GPU Runner、审批和恢复 | ⬜ 尚未实现 |
 
@@ -110,6 +111,20 @@ npm run axiom -- smoke-agent --allow-reviewed-code
 
 Pi 模型会实际读取线性模型、在新的候选副本中编辑 MLP、运行 Smoke、读取独立重载结果，并测试越界写入与非法动作的拒绝。输出位于 `private/wp02-*`，含 Diff、Pi 工具事件、命令日志、权重及确定性报告。仅支持窄范围的可信 Sequential 模型，不是 OS 沙箱；不开放任意 Shell，不代表自主优化已完成。环境与实测结果见 [WP-02 记录](docs/WP02_VALIDATION.md)。
 
+## WP-03：单候选自主优化
+
+```bash
+# 显式发起付费模型调用与可信 Tiny Task 受限代码执行
+npm run axiom -- optimize-once --allow-reviewed-code
+
+# 可选：真实 CPU 回退回归，不调用 LLM；需要 CPU PyTorch
+npm run test:optimize-executor
+```
+
+Agent 读取规则和真实线性 Baseline，自行生成一个候选，先 Smoke 再完整训练；通过独立 validation 指标提出保留/回退，程序拒绝与真实指标冲突的决定。不开放人工参考文件、最终测试或第二轮训练。配置固定只读，仅允许编辑候选 `model.py`，不是任意代码沙箱。
+
+首次真实运行的验证准确率从 **50.00% → 99.8047%**，程序保留候选；这不是最终测试成绩或统计显著性结论。产物在 `private/wp03-*`，交付为 `selected/`，事实依据为 `summary.json` / `report.md`。没有提升时可如实回退并交付 Baseline。详见 [WP-03 实测记录](docs/WP03_VALIDATION.md)。
+
 ## 开发路线
 
 **近期唯一主线：完成一项小型 PyTorch Optimize 任务的闭环**——Agent 真正读取规则、修改代码、跑 Smoke Test、执行小规模训练、客观评估、在预算内选择下一步并生成可复现实验报告。
@@ -131,6 +146,7 @@ Pi 模型会实际读取线性模型、在新的候选副本中编辑 MLP、运�
 - **[CLI 开发路线](docs/CLI_DEVELOPMENT_PLAN.md)** — 本地评估顺序、阶段里程碑和首批开发任务。
 - **[新 MVP 实施计划](docs/IMPLEMENTATION_PLAN.md)** — WP-02 真实操作验收 → WP-03 单轮自主优化 → WP-04 多轮与预算。
 - **[WP-02 实测记录](docs/WP02_VALIDATION.md)** — 真实 Pi 工具链、代码修改、Smoke 产物、权限拒绝及已知限制。
+- **[WP-03 实测记录](docs/WP03_VALIDATION.md)** — 自主单候选、独立验证、真实提升与无提升回退测试。
 - **[低成本评测计划](docs/EVALUATION.md)** — T1/T2/T3 小任务与指标、基线、资源公平性。
 - **[现有代码开发说明](docs/DEVELOPMENT.md)** — 当前实际可运行命令及 Web 原型的限制。
 

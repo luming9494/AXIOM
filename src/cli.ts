@@ -5,10 +5,17 @@ import { exportTable, importRuns } from './research.js';
 // 默认离线运行，每次重新读取来源文件，避免沿用过期的验证状态。
 async function main(args: string[]): Promise<void> {
   const [command, manifest, output, format = 'markdown'] = args;
-  if (command === 'smoke-agent') {
-    if (args.length !== 2 || manifest !== '--allow-reviewed-code') throw new Error('用法: npm run axiom -- smoke-agent --allow-reviewed-code；授权可信 Tiny Task 的受限模型代码执行，不是 OS 沙箱');
-    const { runSmokeAgent } = await import('./agent/smoke-agent.js');
-    await runSmokeAgent(resolve('.'));
+  if (command === 'smoke-agent' || command === 'optimize-once') {
+    if (args.length !== 2 || manifest !== '--allow-reviewed-code') throw new Error(`用法: npm run axiom -- ${command} --allow-reviewed-code；授权可信 Tiny Task 的受限代码执行和付费模型调用，不是 OS 沙箱`);
+    const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
+    if (major < 22 || (major === 22 && minor < 19)) throw new Error('Pi SDK 需要 Node.js >=22.19.0');
+    if (command === 'smoke-agent') {
+      const { runSmokeAgent } = await import('./agent/smoke-agent.js');
+      await runSmokeAgent(resolve('.'));
+    } else {
+      const { runOptimizeAgent } = await import('./agent/optimize-agent.js');
+      await runOptimizeAgent(resolve('.'));
+    }
     return;
   }
   if (command === 'ask' && manifest && output) {

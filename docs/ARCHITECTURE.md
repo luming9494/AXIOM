@@ -132,7 +132,9 @@ AXIOM 从“实验数据助手”转向**能完成 ML 任务的执行型 Agent**
 | `apps/web/` | 离线前端原型，未连接后端 Agent | 代码保留，不作为近期主线 |
 | `vendor/pi` | 固定提交的 Git submodule | 阅读上游与维护扩展兼容性 |
 
-**WP-02 进度补充**：`src/agent/smoke-agent.ts` + `smoke-tools.ts` 已通过真实 Pi 工具链读取与修改候选模型，`src/execution/` 提供受限执行及轨迹；Tiny Task 已有独立指标判题。详见 [WP-02 实测记录](WP02_VALIDATION.md)。这些**不代表**完整 Experiment Loop、跨实验预算器、独立训练 Runner 或自动模型优化已经完成。候选副本与 AST 白名单不是 OS 沙箱。
+**WP-02 进度补充**：`src/agent/smoke-agent.ts` + `smoke-tools.ts` 已通过真实 Pi 工具链读取与修改候选模型，`src/execution/` 提供受限执行及轨迹；Tiny Task 已有独立指标判题。详见 [WP-02 实测记录](WP02_VALIDATION.md)。WP-02 本身只证明 Smoke 操作链，候选副本与 AST 白名单不是 OS 沙箱。
+
+**WP-03 进度补充**：`src/agent/optimize-agent.ts` / `optimize-tools.ts` 复用 Pi SDK，`src/execution/single-optimize.ts` 负责固定 TaskSpec 与单轮状态。`run_baseline` / `run_candidate` 分开授权；`validate_only.py` 限制独立评估只生成 validation 数据。Agent 自主提出一次源码修改，在完整训练与独立重评估后提出 keep/revert，由程序核验并导出 `selected/`。首次真实运行验证准确率 0.5 → 0.998046875，另有真实 CPU 持平回退回归，见 [WP-03 记录](WP03_VALIDATION.md)。这**不代表**完整多轮 Experiment Loop、跨实验预算器、独立训练 Runner 或最终测试达标已实现；不开放任意 Python 项目或人工参考读取能力。
 
 ## 8. 本地技术评估的开放决定
 
