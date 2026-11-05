@@ -15,7 +15,7 @@
 </div>
 
 > **项目状态：Early Prototype / 需求已明确，完整执行型 Agent 尚未实现。**  
-> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**模型代码修改、训练执行、自动优化、GPU 调度均为待开发能力。**
+> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**WP-02 已验证 Pi 真实读取代码、在受限候选副本中修改 MLP 并运行 Smoke；完整训练优化、多轮实验预算与 GPU 调度仍待开发。**
 
 ## What is AXIOM?
 
@@ -68,7 +68,8 @@ AXIOM Experiment Loop
 | Pi SDK 快照问答 | 🟡 入口已接入；未验证真实模型连接；没有工具 |
 | React Web 实验快照原型 | 🟡 已有离线页面，当前暂停开发 |
 | Tiny PyTorch 离线训练与独立判题 | ✅ WP-01 基础版；人工 Baseline/参考改动，非 Agent 优化，见[任务说明](examples/tiny-ml-task/README.md) |
-| Agent 读/改代码并运行训练 | ⬜ 新 MVP 核心，尚未实现 |
+| Agent 读/改代码并运行 Smoke | ✅ WP-02 真实 Pi Tool Calling 已验证；含越界写入/非法命令拒绝，见[实测记录](docs/WP02_VALIDATION.md) |
+| Agent 自主改进并完成正式训练 | ⬜ WP-03 待实现；Smoke 不等于模型优化 |
 | 任务约束、预算、实验反馈与有限迭代 | ⬜ 尚未实现 |
 | Optimize / Reproduce / Ablate 完整工作流 | ⬜ 尚未实现 |
 | 远程 GPU Runner、审批和恢复 | ⬜ 尚未实现 |
@@ -100,6 +101,15 @@ npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两�
 
 该入口目前仍是**将数据快照发送给模型的单次问答**，不是能改代码/跑训练的 Agent。真实模型调用尚需在本地验证；请勿把 API Key、私有论文数据或日志提交到 GitHub。
 
+## WP-02：真实工具调用验收
+
+```bash
+# 显式授权可信 Tiny Task 的受限代码执行；会调用模型 API 并产生费用
+npm run axiom -- smoke-agent --allow-reviewed-code
+```
+
+Pi 模型会实际读取线性模型、在新的候选副本中编辑 MLP、运行 Smoke、读取独立重载结果，并测试越界写入与非法动作的拒绝。输出位于 `private/wp02-*`，含 Diff、Pi 工具事件、命令日志、权重及确定性报告。仅支持窄范围的可信 Sequential 模型，不是 OS 沙箱；不开放任意 Shell，不代表自主优化已完成。环境与实测结果见 [WP-02 记录](docs/WP02_VALIDATION.md)。
+
 ## 开发路线
 
 **近期唯一主线：完成一项小型 PyTorch Optimize 任务的闭环**——Agent 真正读取规则、修改代码、跑 Smoke Test、执行小规模训练、客观评估、在预算内选择下一步并生成可复现实验报告。
@@ -119,7 +129,8 @@ npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两�
 - **[产品需求（PRD）](docs/PRODUCT_REQUIREMENTS.md)** — 三种任务模式、统一 Experiment Loop、预算、交付和验收。
 - **[技术架构](docs/ARCHITECTURE.md)** — Pi 已有能力、自研边界、领域对象与安全约束。
 - **[CLI 开发路线](docs/CLI_DEVELOPMENT_PLAN.md)** — 本地评估顺序、阶段里程碑和首批开发任务。
-- **[新 MVP 实施计划](docs/IMPLEMENTATION_PLAN.md)** — Tiny Task 规格、工作包顺序、验收门槛、预算与执行安全边界。
+- **[新 MVP 实施计划](docs/IMPLEMENTATION_PLAN.md)** — WP-02 真实操作验收 → WP-03 单轮自主优化 → WP-04 多轮与预算。
+- **[WP-02 实测记录](docs/WP02_VALIDATION.md)** — 真实 Pi 工具链、代码修改、Smoke 产物、权限拒绝及已知限制。
 - **[低成本评测计划](docs/EVALUATION.md)** — T1/T2/T3 小任务与指标、基线、资源公平性。
 - **[现有代码开发说明](docs/DEVELOPMENT.md)** — 当前实际可运行命令及 Web 原型的限制。
 

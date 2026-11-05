@@ -1,9 +1,16 @@
 import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { exportTable, importRuns } from './research.js';
 
 // 默认离线运行，每次重新读取来源文件，避免沿用过期的验证状态。
 async function main(args: string[]): Promise<void> {
   const [command, manifest, output, format = 'markdown'] = args;
+  if (command === 'smoke-agent') {
+    if (args.length !== 2 || manifest !== '--allow-reviewed-code') throw new Error('用法: npm run axiom -- smoke-agent --allow-reviewed-code；授权可信 Tiny Task 的受限模型代码执行，不是 OS 沙箱');
+    const { runSmokeAgent } = await import('./agent/smoke-agent.js');
+    await runSmokeAgent(resolve('.'));
+    return;
+  }
   if (command === 'ask' && manifest && output) {
     // 在加载 SDK 前检查版本，避免旧 Node 在依赖初始化期间直接崩溃。
     const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);

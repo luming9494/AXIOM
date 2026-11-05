@@ -132,7 +132,7 @@ AXIOM 从“实验数据助手”转向**能完成 ML 任务的执行型 Agent**
 | `apps/web/` | 离线前端原型，未连接后端 Agent | 代码保留，不作为近期主线 |
 | `vendor/pi` | 固定提交的 Git submodule | 阅读上游与维护扩展兼容性 |
 
-以上**不代表**已有训练代码修改、独立训练 Runner、Experiment Loop、成本预算器、任务完成判题器或自动模型优化。
+**WP-02 进度补充**：`src/agent/smoke-agent.ts` + `smoke-tools.ts` 已通过真实 Pi 工具链读取与修改候选模型，`src/execution/` 提供受限执行及轨迹；Tiny Task 已有独立指标判题。详见 [WP-02 实测记录](WP02_VALIDATION.md)。这些**不代表**完整 Experiment Loop、跨实验预算器、独立训练 Runner 或自动模型优化已经完成。候选副本与 AST 白名单不是 OS 沙箱。
 
 ## 8. 本地技术评估的开放决定
 

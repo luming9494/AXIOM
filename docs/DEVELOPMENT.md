@@ -2,7 +2,7 @@
 
 > **当前文档记录的是已经存在的离线原型，不是 AXIOM 未来的完整 Agent。**  
 > 项目需求已调整为自主机器学习工程 Agent：能在明确规则与资源预算下**读代码、改代码、跑训练、评估与迭代**。新目标请先看 [产品需求](PRODUCT_REQUIREMENTS.md)、[架构](ARCHITECTURE.md)、[CLI 里程碑](CLI_DEVELOPMENT_PLAN.md)、[低成本评测](EVALUATION.md)。  
-> 目前 `src/agent.ts` 中的 Pi SDK 入口 `tools: []`，只是快照问答，**没有执行型科研工具**。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
+> 原有 `src/agent.ts` 的 `ask` 入口仍为 `tools: []` 的快照问答；新增 `src/agent/smoke-agent.ts` 为 WP-02 受限执行验收入口，已真实验证读代码、候选编辑与 Smoke，不是完整 Optimize。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
 
 
 要求 Node.js >=22.19.0，安装依赖后运行：
@@ -61,6 +61,24 @@ npm run test:ml
 ```
 
 这是真实手工训练/评估基础，不是 Agent 自动优化。独立判题目前只判模型有效性与指标，不等同于规则、预算与执行安全全部验证。尚无预算控制器和任意代码沙箱；仅运行可审查的可信样例。已有离线 Node.js 测试不要求安装 Torch，Python 测试单独运行。
+
+## WP-02：Pi 真实操作 Tiny Task
+
+```bash
+npm run build
+npm test
+# 有 CPU PyTorch 的 Python 环境下运行
+npm run test:ml
+
+# 显式启动真实模型调用和受限代码执行，会产生 API 费用
+npm run axiom -- smoke-agent --allow-reviewed-code
+```
+
+需要本地 `DEEPSEEK_API_KEY` 与 `.venv` Python；可用 `AXIOM_PYTHON` 指定其他解释器。候选工作区自动创建在 `private/wp02-*`。只开放五个受限工具，文件写入限于候选 `model.py`，执行动作限于 L0/Smoke，执行前以 AST 白名单限制简单 Sequential 模型；不开放任意 Shell、不继承模型密钥到训练进程。该模式不是 OS 安全沙箱，只用于可信公开任务。
+
+运行后查看 `report.md`、`summary.json`、`patch.diff`、`pi-events.jsonl`、`operations.jsonl` 及 `smoke/`。自然语言回复可能有路径错误，产物位置以程序报告为准。验收未满足时命令失败并保留轨迹。完整说明见 [WP-02 实测记录](WP02_VALIDATION.md)。
+
+本次仅证明真实操作链；自主优化属于 WP-03，多轮实验和预算属于 WP-04。请求/工具次数及超时上限只是该验收的防失控措施。
 
 ## Pi 问答
 
