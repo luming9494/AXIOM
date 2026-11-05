@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "task_id": "tiny-xor-optimize-v1",
+  "mode": "optimize",
+  "protocol": "tiny-xor-v1",
+  "description": "Improve the synthetic XOR classifier using legal model or config changes.",
+  "dataset": {
+    "train": { "samples": 1024, "seed": 1701 },
+    "validation": { "samples": 512, "seed": 1702 },
+    "final-test": { "samples": 512, "seed": 1703 }
+  },
+  "goal": { "metric": "accuracy", "direction": "maximize", "target": 0.95, "split": "final-test", "required_level": "full" },
+  "rules": {
+    "allowed_files": ["model.py", "config.json"],
+    "max_parameters": 1024,
+    "epochs_range": [1, 120],
+    "learning_rate_range": [0.0001, 0.1],
+    "forbidden": ["pretrained_weights", "extra_data", "test_set_tuning", "evaluator_changes", "dependency_installation", "network_access"]
+  },
+  "planned_controller_budget": { "max_wall_seconds": 600, "max_candidates": 1, "note": "These controller limits are not enforced by the WP-01 training scripts yet." }
+}

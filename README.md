@@ -67,6 +67,7 @@ AXIOM Experiment Loop
 | Markdown / CSV / LaTeX 实验表格 | ✅ 已实现 |
 | Pi SDK 快照问答 | 🟡 入口已接入；未验证真实模型连接；没有工具 |
 | React Web 实验快照原型 | 🟡 已有离线页面，当前暂停开发 |
+| Tiny PyTorch 离线训练与独立判题 | ✅ WP-01 基础版；人工 Baseline/参考改动，非 Agent 优化，见[任务说明](examples/tiny-ml-task/README.md) |
 | Agent 读/改代码并运行训练 | ⬜ 新 MVP 核心，尚未实现 |
 | 任务约束、预算、实验反馈与有限迭代 | ⬜ 尚未实现 |
 | Optimize / Reproduce / Ablate 完整工作流 | ⬜ 尚未实现 |
@@ -118,6 +119,7 @@ npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两�
 - **[产品需求（PRD）](docs/PRODUCT_REQUIREMENTS.md)** — 三种任务模式、统一 Experiment Loop、预算、交付和验收。
 - **[技术架构](docs/ARCHITECTURE.md)** — Pi 已有能力、自研边界、领域对象与安全约束。
 - **[CLI 开发路线](docs/CLI_DEVELOPMENT_PLAN.md)** — 本地评估顺序、阶段里程碑和首批开发任务。
+- **[新 MVP 实施计划](docs/IMPLEMENTATION_PLAN.md)** — Tiny Task 规格、工作包顺序、验收门槛、预算与执行安全边界。
 - **[低成本评测计划](docs/EVALUATION.md)** — T1/T2/T3 小任务与指标、基线、资源公平性。
 - **[现有代码开发说明](docs/DEVELOPMENT.md)** — 当前实际可运行命令及 Web 原型的限制。
 

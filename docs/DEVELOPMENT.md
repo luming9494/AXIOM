@@ -48,6 +48,20 @@ npm run test:web                 # 桌面与移动端交互测试，自动启动
 
 构建输出为 `dist/web/`；浏览器测试截图位于 `test-results/`，均不提交 Git。
 
+## Tiny PyTorch 任务（WP-01，离线训练基座）
+
+已新增公开合成分类任务、线性 Baseline、人工 MLP 参考改动，以及真实 CPU 训练、权重保存/加载、独立指标重算与最终指标判题。完整环境说明、命令、实测结果和安全限制见 [Tiny Task 使用说明](../examples/tiny-ml-task/README.md)。
+
+```bash
+# 使用安装了 CPU PyTorch 的 Python 3.11 环境
+python examples/tiny-ml-eval/checks.py --candidate examples/tiny-ml-task
+python examples/tiny-ml-eval/train.py --candidate examples/tiny-ml-task --output private/tiny-demo/baseline --level full
+python examples/tiny-ml-eval/evaluate.py --run private/tiny-demo/baseline --output private/tiny-demo/baseline/validation.json
+npm run test:ml
+```
+
+这是真实手工训练/评估基础，不是 Agent 自动优化。独立判题目前只判模型有效性与指标，不等同于规则、预算与执行安全全部验证。尚无预算控制器和任意代码沙箱；仅运行可审查的可信样例。已有离线 Node.js 测试不要求安装 Torch，Python 测试单独运行。
+
 ## Pi 问答
 
 将 `.env.example` 复制为本地 `.env` 并填写 `DEEPSEEK_API_KEY`，默认使用官方 `deepseek-flash`（按量收费）。`.env` 已被 Git 忽略；已有本地配置时无需覆盖。然后运行：

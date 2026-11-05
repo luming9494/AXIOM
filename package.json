@@ -13,6 +13,7 @@
     "preview:web": "vite preview --config apps/web/vite.config.ts",
     "test:web": "playwright test --config apps/web/playwright.config.ts",
     "test": "tsx --test tests/*.test.ts",
+    "test:ml": "python -m unittest discover -s tests/python -v",
     "axiom": "tsx src/cli.ts"
   },
   "dependencies": {
