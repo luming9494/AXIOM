@@ -1,146 +1,143 @@
 <div align="center">
 
-<img src="./assets/axiom-banner.svg" alt="AXIOM — Autonomous Research Harness" width="100%" />
+<img src="./assets/axiom-banner.svg" alt="AXIOM — Autonomous ML Engineering Agent" width="100%" />
 
 <br />
 
-**Autonomous eXperimentation & Intelligent Orchestration for Machine Learning**
+**Autonomous Machine Learning Engineering & Experimentation Harness**
 
-基于 Pi Agent 的科研实验自动化与可信证据 Harness
+**基于 Pi 的自主机器学习工程 Agent：从任务要求到真实模型、实验结果与可复现报告。**
 
 [![Built on Pi](https://img.shields.io/badge/Built_on-Pi_Agent-1B756F?style=flat-square)](https://github.com/earendil-works/pi)
-![Status](https://img.shields.io/badge/status-early_development-4B6680?style=flat-square)
-![TypeScript](https://img.shields.io/badge/core-TypeScript-3178C6?style=flat-square)
+![Status](https://img.shields.io/badge/status-early_prototype-4B6680?style=flat-square)
+![Core](https://img.shields.io/badge/core-TypeScript-3178C6?style=flat-square)
 
 </div>
 
-> **项目阶段：离线实验管理原型 / Offline MVP Prototype**
->
-> 已实现 JSON 实验清单导入、指标来源数值校验与 SHA-256 记录，以及 Markdown / CSV / LaTeX 对比表导出。CLI 与 React Web 前端现已并行提供；Web 支持本地快照导入与可视化，尚无后端。Pi 快照问答已接入 CLI，但真实模型调用尚未验证。下文的完整科研自动化能力仍是**开发目标**，不代表已完成。
+> **项目状态：Early Prototype / 需求已明确，完整执行型 Agent 尚未实现。**  
+> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**模型代码修改、训练执行、自动优化、GPU 调度均为待开发能力。**
 
-## 🎯 项目介绍
+## What is AXIOM?
 
-AXIOM 面向需要反复训练、评估、复现实验的 AI / ML 研究者，目标是将科研流程从自然语言想法连接到**可追溯的实验记录**，再连接到**可核验的论文结果**。
+AXIOM 旨在让 AI/ML 学习者和研究者，把一个有明确限制的机器学习任务交给 Agent：
 
-它不是又一个文献问答机器人，也不是简单地把大模型接到 MLflow。AXIOM 的重点是开发面向科研业务的 **Agent Harness**：
+**理解任务 → 检查基线 → 设计候选 → 修改代码 → 运行训练/评估 → 根据真实结果迭代 → 交付模型、配置和报告。**
 
-- **实验规划**：读取研究目标、训练配置与现有结果，提出下一步实验方案。
-- **可信数据管理**：将指标关联到评估产物、模型权重、配置、数据集版本与 Git Commit；缺失证据时明确标注。
-- **GPU 任务执行**：在获得用户批准后，提交并监控本地或远程训练/评估任务。
-- **可靠恢复**：区分 Agent 会话与真实训练任务，避免任务中断后重复启动高成本实验。
-- **结果与论文协作**：从经过核验的实验结果生成对比表和论文分析草稿，并保留来源。
+AXIOM 不只是论文 RAG、实验管理面板或日志总结器。它的目标是**在有限时间、LLM Token 与计算预算内，尽可能自主完成真正可验证的机器学习工程任务**，并在无法达标时如实报告最好结果与失败原因。
 
-## 🧭 首个落地场景：私有科研实验工作区
+### 三类核心使用场景（目标能力）
 
-第一阶段先从用户本地的私有机器学习实验工作区入手（不公开其研究名称、论文内容和原始数据），完成：
-
-1. 导入实验配置、日志、评估输出和已有实验记录；
-2. 从原始文件提取指标、建立指标与来源之间的关联；
-3. 检查不同 Run 的数据集、评估口径、代码版本、随机种子等是否具有可比性；
-4. 支持自然语言查询实验差异与缺失的消融实验；
-5. 导出标注来源的 Markdown / CSV / LaTeX 实验对比表。
-
-**重要原则：**不能凭模型输出虚构实验指标、GPU 耗时、论文引用或训练结果；未被验证的记录必须标记为未验证。
-
-## 🏗️ 计划架构
-
-```text
-Web / CLI
-   │
-   ▼
-AXIOM API
-   │
-   ├── Research Context Engine   # 科研上下文组装
-   ├── Experiment Registry       # 实验实体与追溯关系
-   ├── Scientific Evidence       # 证据与指标一致性校验
-   ├── Workflow / Approval       # 任务状态和人工审批
-   └── Evaluation & Trace        # 执行过程与业务评测
-   │
-   ▼
-Pi Agent SDK + Extensions + Skills + MCP
-   │
-   ├── Git / Config / Log Adapters
-   ├── MLflow Adapter
-   └── Python GPU Runner (未来阶段)
-```
-
-### 分层与开发边界
-
-| 层 | 方案 | AXIOM 的工作 |
+| 模式 | 用户会说什么 | 预期交付 |
 | --- | --- | --- |
-| Agent Loop / 模型 / 工具 | Pi SDK | **复用**，不重写基础循环 |
-| Sessions / Compaction / Skills / MCP | Pi | **复用并配置** |
-| Research Context / Evidence | TypeScript | **重点自研** |
-| 实验跟踪 | MLflow（可选集成） | 使用成熟组件 + 业务适配 |
-| GPU 训练与状态恢复 | Python Runner | **重点自研** |
-| 前端 | React（规划） | 按 MVP 需要逐步添加 |
+| **Optimize** · 模型优化/打榜 | “这是老师的基础模型与作业规则，在预算内尝试改进验证指标。” | 合规的代码修改、真实训练、最优有效模型与成绩报告 |
+| **Reproduce** · 论文复现 | “这篇论文有配套代码，帮我尽量复现其训练或评估结果。” | 环境、运行/评估/训练复现级别、与论文差距及证据 |
+| **Ablate** · 消融实验 | “已有几个模块和实验，补齐有意义的消融，形成对照报告。” | 消融组合、运行记录、可比较指标与分析报告 |
 
-## 🗂️ 计划目录
+三种模式共用一个 **AXIOM Experiment Loop**；不会一开始就制造三个互不相关的 Agent。上述能力**正在规划/开发，并非现在即可完整使用**。
 
-```text
-AXIOM/
-├── README.md
-├── docs/                       # 架构、业务规范、开发计划
-├── apps/
-│   ├── api/                    # 未来的 TypeScript API
-│   └── web/                    # 已实现 React 科研工作台前端（本地快照模式）
-├── packages/
-│   ├── agent/                  # Pi SDK 适配层
-│   ├── harness/                # 上下文 / 证据 / 编排 / 审批
-│   └── research-tools/         # 科研领域工具
-├── services/
-│   └── experiment-runner/      # 未来的 Python GPU Runner
-├── evals/                      # 业务与 Harness 评测
-├── examples/
-│   └── synthetic-experiment/   # 使用合成数据的公开示例
-└── vendor/
-    └── pi/                     # Pi 官方源码（Git submodule，固定上游提交）
-```
+## 核心设计：Agent 决策 + 真实执行 + 预算控制
 
-目录结构是目标结构，目前 `vendor/pi` 已作为 Git submodule 接入；其他尚未创建的模块不代表已实现。
+~~~text
+TaskSpec (目标 / 作业限制 / 验收标准 / 预算)
+    │
+    ▼
+Pi Agent (代码理解、Tool Calling、候选规划)
+    │
+    ▼
+AXIOM Experiment Loop
+    ├── 修改代码并保存可审查 Diff
+    ├── L0 静态检查 / L1 Smoke Test
+    ├── L2 小规模代理实验（允许时）
+    ├── L3 正式训练与评估（按规则/审批）
+    ├── 基于结果决定保留、回退、继续或停止
+    └── 记录 Token、计算时间、任务状态与证据
+    │
+    ▼
+代码 + 配置 + Checkpoint + 指标 + 实验报告
+~~~
 
-架构设计说明：[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)。公开示例只使用合成数据，不包含未发表论文的研究名称、真实实验结果或私有代码。
+**Pi Agent Loop** 负责模型推理与工具调用；**AXIOM Experiment Loop** 负责实验任务层面的迭代、预算、真实训练和终止条件。实验运行时无需一直向 LLM 轮询训练是否完成。长任务和远程 GPU 后期交给独立 Runner 维护。
 
-## 🛠️ 初步技术选型
+## 已有功能 vs. 开发目标
 
-离线实验导入、指标来源校验和表格导出 CLI 已实现；React Web 前端提供工作台、实验筛选、证据详情、本地 Registry 导入与表格导出。运行 `npm run dev:web` 启动前端；完整方法见 [本地开发说明](docs/DEVELOPMENT.md)。Web 不重新核验原始文件，数据仅存在内存中。Pi 快照问答入口已接入 CLI，真实模型调用尚待配置凭据后验证；Web 后端、自定义工具、数据库和 GPU Runner 尚未实现。
+| 模块 | 当前状态 |
+| --- | --- |
+| Pi 上游源码 | ✅ 已作为 Git submodule 放在 `vendor/pi` |
+| 实验 JSON 清单、指标文件数值核验和 SHA-256 记录 | ✅ 基础版已实现；不等于科研真实性审计 |
+| Markdown / CSV / LaTeX 实验表格 | ✅ 已实现 |
+| Pi SDK 快照问答 | 🟡 入口已接入；未验证真实模型连接；没有工具 |
+| React Web 实验快照原型 | 🟡 已有离线页面，当前暂停开发 |
+| Agent 读/改代码并运行训练 | ⬜ 新 MVP 核心，尚未实现 |
+| 任务约束、预算、实验反馈与有限迭代 | ⬜ 尚未实现 |
+| Optimize / Reproduce / Ablate 完整工作流 | ⬜ 尚未实现 |
+| 远程 GPU Runner、审批和恢复 | ⬜ 尚未实现 |
 
-- **Agent**：[`@earendil-works/pi-coding-agent`](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) / Pi TypeScript SDK
-- **主服务**：Node.js 22.19+、TypeScript
-- **科研执行**：Python、PyTorch、SSH / Runner API（后续）
-- **实验记录**：PostgreSQL / SQLite、MLflow（随实现阶段评估）
-- **交互**：CLI + React Web（前端预览已实现，API 待接入）
-- **扩展能力**：Pi Extensions、Skills、MCP
-- **质量**：Node.js test runner + Playwright；后续添加 Python 测试与业务评测
+## Quick Start：现有可运行功能
 
-📌 **近期开发计划**：[CLI-first 开发路线（含 CLI 交互效果图）](docs/CLI_DEVELOPMENT_PLAN.md)。
+需要 **Node.js ≥22.19**。
 
-## ✅ 开发路线
+~~~bash
+git clone --recurse-submodules https://github.com/luming9494/AXIOM.git
+cd AXIOM
+npm ci
+npm run build
+npm test
 
-- [ ] **MVP 0（部分完成）**：Pi SDK 快照问答已接入；待验证真实模型调用、实现自定义科研工具
-- [ ] **MVP 1（基础原型完成）**：JSON 清单导入、Run Registry JSON 输出、指标来源核验已实现；待支持真实日志/配置适配与持久化管理
-- [ ] **MVP 2（部分完成）**：三种格式对比表、数据集与评估协议一致性检查已实现；待实现 Context Engine 与完整配置可比性校验
-- [ ] **Phase 2**：MLflow 集成、实验计划、执行审批
-- [ ] **Phase 3**：远程 GPU Runner、任务去重、监控与失败恢复
-- [ ] **Phase 4**：论文结果关联、Web 控制台、业务 Evals
-- [ ] **探索**：Pi Durable、多 Agent 与其他进阶能力（以实际收益为依据）
+# 只使用公开的合成实验数据
+mkdir private
+npm run axiom -- import examples/synthetic-experiment/manifest.json private/registry.json
+npm run axiom -- export examples/synthetic-experiment/manifest.json private/comparison.md markdown
+~~~
 
-## 🔒 安全与科研严谨性
+> `private/` 已被 Git 忽略。输出文件必须不存在。如果本地已有输出，请更换文件名。Windows PowerShell、CMD、Linux/macOS 的新建目录操作可根据环境调整。
 
-- 本地日志、数据集、模型权重、未发表论文内容与 API Key 默认不提交公开仓库；详见 `.gitignore`。
-- 提交训练、删除产物、终止任务等高成本或不可逆操作必须有明确授权。
-- 真实 GPU 任务由独立 Runner 管理，Agent 会话退出不应导致运行状态丢失。
-- 所有论文结果来自可追溯的实际评估文件，不能由模型编造。
-- 本项目不声称已经达到无人值守的科研自动化。
+需要配置合法的模型 API Key 后，可以尝试已有**快照问答**命令：
 
-## 🌱 Pi 上游源码
+~~~bash
+npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两次示例实验"
+~~~
 
-本项目以 [Pi](https://github.com/earendil-works/pi) 为 Agent 基础。已将 Pi 官方仓库以 **Git submodule** 接入 `vendor/pi/`，固定上游提交 `676af1d777ef6f04b6bc8daf4cf3b9b1799cff4d`。首次克隆使用 `git clone --recurse-submodules https://github.com/luming9494/AXIOM.git`，已有本地副本使用 `git submodule update --init --recursive` 拉取完整源码。更新上游时需单独审查 Pi 变更并提交新的子模块指针。
+该入口目前仍是**将数据快照发送给模型的单次问答**，不是能改代码/跑训练的 Agent。真实模型调用尚需在本地验证；请勿把 API Key、私有论文数据或日志提交到 GitHub。
 
-上游由其原作者及贡献者维护，遵循 [MIT License](https://github.com/earendil-works/pi/blob/main/LICENSE)。引用及再分发时保留原始版权与许可说明。AXIOM 本身与 Pi 官方项目无隶属关系。
+## 开发路线
 
-Pi SDK 适配开发时，可以阅读 [Pi SDK 文档](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md) 和 [Pi Extensions 文档](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md)。
+**近期唯一主线：完成一项小型 PyTorch Optimize 任务的闭环**——Agent 真正读取规则、修改代码、跑 Smoke Test、执行小规模训练、客观评估、在预算内选择下一步并生成可复现实验报告。
+
+在此基础上再扩展：
+1. **Ablate / Reproduce**：消融与论文复现，共用执行内核；
+2. **Reliable Runner**：远程 GPU、Job 去重、审批和状态恢复；
+3. **Eval**：小型快速任务 + 少量端到端训练 + 独立真实任务，记录质量和成本；
+4. **Web/Desktop（可选）**：CLI 能力稳定后再考虑。
+
+![AXIOM CLI 交互效果概念图](./assets/axiom-cli-preview.svg)
+
+*以上是设计概念图，不是已运行的 AXIOM CLI 截图；初期优先复用 Pi 原生 TUI。*
+
+## 文档
+
+- **[产品需求（PRD）](docs/PRODUCT_REQUIREMENTS.md)** — 三种任务模式、统一 Experiment Loop、预算、交付和验收。
+- **[技术架构](docs/ARCHITECTURE.md)** — Pi 已有能力、自研边界、领域对象与安全约束。
+- **[CLI 开发路线](docs/CLI_DEVELOPMENT_PLAN.md)** — 本地评估顺序、阶段里程碑和首批开发任务。
+- **[低成本评测计划](docs/EVALUATION.md)** — T1/T2/T3 小任务与指标、基线、资源公平性。
+- **[现有代码开发说明](docs/DEVELOPMENT.md)** — 当前实际可运行命令及 Web 原型的限制。
+
+## 安全、课程规则与可信实验
+
+- 任何课程作业必须遵守教师允许的 AI 工具使用范围、数据/模型限制及评估规则。
+- 真实指标应来自实际训练/评估产物；L2 代理实验不得冒充 L3 正式指标。
+- 任务规则由可信代码执行，不能由模型自行覆盖；付费 GPU 与破坏性操作需要用户授权。
+- 陌生仓库代码、外部依赖和模型工具存在执行风险，应使用隔离工作区及最小权限。
+- **公开仓库不包含未发表论文名称、私有模型代码、真实实验数据、Checkpoint 或 API Key。**
+- AXIOM 不承诺每次完成任务或达到排行榜目标，所有尚未实现的能力均以 roadmap 标注。
+
+## Pi 上游与许可
+
+AXIOM 基于 [Pi](https://github.com/earendil-works/pi)，将官方源码以 Git submodule 接入 `vendor/pi`（固定提交 `676af1d777ef6f04b6bc8daf4cf3b9b1799cff4d`）。后续升级需显式审查提交指针；当前 npm SDK 依赖与该 submodule 的版本独立管理。Pi 遵循其上游 MIT License，AXIOM 与 Pi 官方无隶属关系。
 
 ---
 
-**AXIOM · Autonomous Research Harness · Built on Pi**
+<div align="center">
+
+**AXIOM · From Task to Experiment, From Experiment to Evidence.**
+
+</div>

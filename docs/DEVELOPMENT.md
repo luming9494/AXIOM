@@ -1,4 +1,9 @@
-# 本地开发
+# 本地开发（当前已实现功能）
+
+> **当前文档记录的是已经存在的离线原型，不是 AXIOM 未来的完整 Agent。**  
+> 项目需求已调整为自主机器学习工程 Agent：能在明确规则与资源预算下**读代码、改代码、跑训练、评估与迭代**。新目标请先看 [产品需求](PRODUCT_REQUIREMENTS.md)、[架构](ARCHITECTURE.md)、[CLI 里程碑](CLI_DEVELOPMENT_PLAN.md)、[低成本评测](EVALUATION.md)。  
+> 目前 `src/agent.ts` 中的 Pi SDK 入口 `tools: []`，只是快照问答，**没有执行型科研工具**。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
+
 
 要求 Node.js >=22.19.0，安装依赖后运行：
 
@@ -18,7 +23,7 @@ npm run axiom -- export examples/synthetic-experiment/manifest.json private/comp
 
 ## Web 前端
 
-CLI 与 Web 并行保留。Web 使用 React + TypeScript + Vite，代码位于 `apps/web/`；表格格式化逻辑由 `src/table.ts` 供两个入口共用。
+仓库仍保留 CLI 与 Web 两套已有入口，但当前研发主线为 CLI，Web 新功能暂缓。Web 使用 React + TypeScript + Vite，代码位于 `apps/web/`；表格格式化逻辑由 `src/table.ts` 供两个入口共用。
 
 ```bash
 npm run dev:web
