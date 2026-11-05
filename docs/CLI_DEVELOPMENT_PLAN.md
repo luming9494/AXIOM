@@ -1,214 +1,162 @@
-# AXIOM CLI-first 开发计划
+# AXIOM CLI-first 开发路线
 
-> **项目**：AXIOM · Autonomous Research Harness  
-> **版本**：v0.2 规划稿（2026-11-05）  
-> **实施原则**：CLI-first / 基于 Pi 扩展 / 科研证据优先 / 先真实可用，后丰富界面  
-> **公开仓库**：[luming9494/AXIOM](https://github.com/luming9494/AXIOM)
+> v0.3 · 2026-11-05 · **新的开发顺序**：能读/改代码并跑出真实结果的 Agent → 预算约束的 Optimize → Ablate / Reproduce → GPU Runner → 可选 Web。  
+> 完整产品边界：[PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) · 测试：[EVALUATION.md](EVALUATION.md)
 
-## 0. 未来 AXIOM CLI 长什么样？
+## 0. CLI 体验目标
 
-![AXIOM CLI 交互效果概念图](../assets/axiom-cli-preview.svg)
+![AXIOM CLI 交互概念图](../assets/axiom-cli-preview.svg)
 
-> **注意：这是一张交互设计概念图，不是当前 CLI 的实际运行截图。** 图里的会话界面、工具步骤和产物侧栏属于目标体验；现阶段仓库里的 `ask` 仍为单次快照问答入口，并没有完整的交互式科研 Agent 工作台。
+> **图为设计概念，不是 AXIOM 当前真实运行截图。** 初期不自研终端 TUI，先复用 Pi CLI，并通过 Extensions/Skills 提供真实科研任务能力。图中的右侧信息栏不代表 Pi 目前已有该 UI。
 
-### CLI 产品原则
+最终想要的交互：
 
-- **像 Pi / Codex 一样以任务为中心**：打开项目就能输入自然语言任务，模型能在任务内读取真实证据、调用科研工具。
-- **先复用 Pi 原生 TUI**：不急于重写终端渲染、输入框、滚动和模型选择，优先通过 Pi Extensions / Skills 增加科研能力。
-- **普通问答与确定性操作并存**：自然语言负责理解与计划，`import`、`compare`、`verify`、`export` 等业务命令负责可靠执行。
-- **过程透明**：展示正在使用的工具、来源路径、验证状态、失败原因和生成产物。
-- **默认本地、安全与可复现**：不把 API Key、未发表论文、真实实验日志和权重提交到公共仓库；默认只读，危险操作明确审批。
+~~~text
+$ axiom                         # 目标命令，尚未实现
+> 请在合法修改范围和预算内优化这个小型分类模型。
 
-## 1. 当前进度（依据仓库现有代码）
+AXIOM → 读取任务规则/仓库 → 建立基线
+      → 提出代码改动并展示 Diff
+      → L0/L1 检查
+      → 小规模训练与验证
+      → 根据真实结果保留/回退候选
+      → 输出代码、模型和实验报告
+~~~
 
-| 能力 | 当前状态 | 依据 / 下一步 |
+核心不是“会画终端 UI”，而是工具和训练**真的执行过**。
+
+## 1. 当前仓库状态（依据 2026-11-05 代码）
+
+| 能力 | 状态 | 证据 |
 | --- | --- | --- |
-| Pi 上游源码 | ✅ 已引入 | `vendor/pi` Git submodule；不建议直接修改上游 |
-| JSON 实验清单导入 | ✅ 已实现 | `src/research.ts` 与 `src/cli.ts` |
-| 指标来源数值校验及 SHA-256 | ✅ 已实现基础版 | `verified` 仅表示值匹配和来源文件记录，**不等于实验真实性审计** |
-| Markdown / CSV / LaTeX 导出 | ✅ 已实现 | `src/table.ts` |
-| 数据集和评估协议一致性检查 | ✅ 已实现基础版 | 其他配置差异仍需补充检查 |
-| Pi SDK 快照问答 | 🟡 已接线、待真实验证 | `src/agent.ts`；需要本地凭据，当前无科研工具 |
-| Pi 交互式科研 Agent | ⬜ 未完成 | 实现工具、生命周期与会话交互 |
-| GPU 训练与恢复 | ⬜ 未完成 | 后续独立 Runner |
-| Web 前端 | 🟡 已有离线预览 | 暂缓扩展，保持现有代码，不作为本轮主线 |
+| Pi 官方源码 | 已引入 | `vendor/pi` Git submodule |
+| JSON Run 清单导入 | 已实现 | `src/research.ts` / `src/cli.ts` |
+| 来源数值验证和 SHA-256 记录 | 已实现基础版 | 不代表完整科研真实性验证 |
+| Markdown / CSV / LaTeX 导出 | 已实现 | `src/table.ts` |
+| Pi SDK 快照问答入口 | 已接入但未验证真实模型调用 | `src/agent.ts`，当前 `tools: []` |
+| React 离线 Web 原型 | 已存在，当前暂缓 | `apps/web/`，无 Web Agent 后端 |
+| 自定义科研 Tool Calling / Agent 编辑代码 | **未实现** | 本轮主要突破点 |
+| 小规模模型训练闭环 | **未实现** | 新 MVP |
+| Budgeted Experiment Loop | **未实现** | 主要 Harness 自研模块 |
+| GPU Runner / 恢复 | **未实现** | 后续任务 |
 
-**不重复造轮子**：Pi 已有 Agent Loop、基础工具调用、会话、Compaction、Extensions、Skills 和 MCP 接入能力。AXIOM 重点开发科研上下文、证据验证、实验编排、审批和运行状态一致性。
+**注意：旧“导入实验并导出表格”的 MVP 已成为基础能力，不再是新的项目验收终点。**
 
-## 2. 目标范围与非目标
+## 2. 阶段 0：本地基线和源码熟悉（先做）
 
-### 近期要交付
+- [ ] `npm ci` / `npm run build` / `npm test` 回归已有功能；
+- [ ] 使用合成数据验证 `import`、`export`，确认输出来自真实文件；
+- [ ] 配置本地私有模型密钥，核验 `ask` 的成功、报错与密钥脱敏；
+- [ ] 阅读 Pi Agent Loop、SDK 与 Extensions 的最小调用链；
+- [ ] 验证 Pi TUI 能否加载 AXIOM 的自定义工具与 Skill；
+- [ ] 写下与 npm SDK 版本不一致的上游子模块接口差异。
 
-1. 在真实本地模型凭据下验证 `ask` 成功、失败、超时和密钥脱敏。
-2. 跑通 Pi 交互式终端 + AXIOM 第一个科研 Extension。
-3. 通过工具**按需读取**实验注册表和证据，而不是总把完整快照塞进 Prompt。
-4. 实现可复用的 `experiment-compare` Skill 和确定性对比工具。
-5. 以公开合成实验测试流程，生成带证据状态的报告。
+**验收**：工具确实被模型调用（有可核对的事件记录），而不是模型口头说调用了。无需先读完全部 Pi 源码。
 
-### 暂时不做
+## 3. 阶段 1：最小可运行 ML Agent（最高优先级）
 
-- 不继续扩展 React Web，也不先上 Electron / Tauri。
-- 不重写 Pi Agent Loop / TUI；先验证扩展接口是否足够。
-- 不在最初 MVP 上堆多个 Agent、向量数据库、复杂 RAG 和 Kubernetes。
-- 不让模型直接无审批地提交昂贵训练、删除权重或操作远程服务器。
-- 不将未发表研究项目名称、私有数据和实验结果放进公开仓库。
+- [ ] 设计 Tiny PyTorch Task：固定小数据、弱 Baseline、可检查的规则；
+- [ ] 在不调用模型时运行 Baseline / 单测 / 训练脚本，取得实际耗时；
+- [ ] 注册授权工作区的读文件、代码编辑、运行测试、读取指标工具；
+- [ ] 实现改动隔离与 Git Diff / 回滚；
+- [ ] 让 Agent 读取作业规则、理解代码、提出一个合法候选；
+- [ ] 真正执行 L0 静态/单测和 L1 Smoke，返回失败日志与训练输出。
 
-## 3. Pi 源码阅读计划（带着问题阅读）
+**验收**：Agent 能对给定项目完成至少一次有意义的**真实文件修改**，并执行训练最小闭环，而不是只生成建议。
 
-| 优先级 | 文件或文档 | 必须搞清的问题 | 阅读产物 |
+## 4. 阶段 2：Optimize Tiny Task + Budget（新 MVP）
+
+- [ ] TaskSpec：目标指标、允许修改范围、禁止行为、成功条件；
+- [ ] Budget Controller：墙钟、模型 Token、实验次数和 CPU/GPU 资源；
+- [ ] 实现 L2 小数据真实训练与独立评估；L3 只在需要且被允许时执行；
+- [ ] 最多进行任务预算允许的有限轮候选调整；
+- [ ] 每轮保存代码 Diff、参数、运行命令、指标与执行成本；
+- [ ] 实现 `target_met / best_effort / budget_exhausted / blocked / failed`；
+- [ ] 输出最优有效候选、结果对比表、完整执行报告和复现说明。
+
+**验收**：同一个完整 Tiny Task 可从任务输入跑到最终真实产物；不达标、超预算或失败也能正确交付与停止。不能把 L2 代理结果冒充完整任务分数。
+
+## 5. 阶段 3：通用性验证
+
+- [ ] Ablate：实现两个可开关模块的最小消融任务；
+- [ ] Reproduce：先完成公开轻量仓库的 Run / Evaluate，再探索 Train；
+- [ ] 不重新造三个 Agent，尽可能共用 TaskSpec、Runner、Evaluator、Registry；
+- [ ] 对工具失败、依赖冲突、不可比指标和中断进行故障注入；
+- [ ] 记录 Token、训练时间、任务完成质量，并与同资源原生 Pi 对照。
+
+**验收**：同一 Harness 可完成至少两类不同 ML 任务，且报告明确指出达标等级和依据。
+
+## 6. 阶段 4：远程 GPU 与可靠执行（后续）
+
+- [ ] 设计 Python Runner：`submit / status / logs / cancel / reconcile`；
+- [ ] 先本地长任务模拟，再连接远程 Linux GPU（Windows 本地管理）；
+- [ ] 给任务生成稳定 Job ID，超时/断线时先查状态再重试；
+- [ ] 记录 Checkpoint/权重与训练配置，验证恢复兼容性；
+- [ ] 付费 GPU、危险 Shell、删除产物等动作有确定性审批；
+- [ ] 实现异常事件通知，让 LLM 只在需要决策时被唤醒。
+
+**验收**：客户端退出不等于训练消失；重连后可核验远程状态；重复提交不会重复启动收费任务。
+
+## 7. 阶段 5：评测与产品化
+
+- [ ] T1：短小故障修复任务；
+- [ ] T2：真实小规模训练（目标 10–30 分钟，硬件相关）；
+- [ ] T3：真实科研任务另行安排预算，不进入日常测试；
+- [ ] 记录成功率、有效模型、约束违规、Token、GPU/CPU 时长和来源可靠性；
+- [ ] 补齐使用文档、README、可复现实例、隐私边界与失败案例；
+- [ ] 核心 CLI 工作流稳定后，才评估是否恢复 Web/桌面开发。
+
+**验收**：公开合成任务可让第三方复现，评测不依赖未发表私人项目。
+
+## 8. 第一批开发任务（建议编号，不是已创建的 GitHub Issues）
+
+| 优先级 | 编号 | 待办 | 产出 |
 | --- | --- | --- | --- |
-| P0 | `vendor/pi/packages/agent/src/agent-loop.ts` | 一轮模型推理、Tool Call、工具结果、继续推理是如何连接的？ | 简化调用链笔记 |
-| P0 | `vendor/pi/packages/agent/src/agent.ts` | Agent 状态、运行控制、事件订阅如何工作？ | 状态与事件说明 |
-| P0 | `vendor/pi/packages/coding-agent/docs/extensions.md` | 自定义工具如何注册、怎样做执行限制？ | 第一个扩展原型 |
-| P0 | `vendor/pi/packages/coding-agent/docs/sdk.md` | `createAgentSession`、Session、ModelRuntime、事件流怎么接入？ | SDK 最小可运行例子 |
-| P1 | `vendor/pi/packages/coding-agent` 的 Session / Context / Compaction 相关实现 | 会话、压缩和科研证据上下文应该怎样分离？ | Context 设计笔记 |
-| P1 | `vendor/pi/packages/coding-agent/docs/skills.md` 与 MCP 文档 | 何时用 Tool、何时用 Skill、何时接 MCP？ | 首个科研 Skill |
-| P2 | Pi Durable | 长任务恢复能复用什么、哪些 GPU 状态仍要自研？ | 后续评估记录 |
+| P0 | AX-01 | 跑通现有仓库与 Pi SDK | 确认真实调用/版本 |
+| P0 | AX-02 | 构建 Tiny PyTorch Task + 判题器 | CPU 可重复的任务环境 |
+| P0 | AX-03 | 工具执行与代码修改 | 真实工具轨迹与 Diff |
+| P0 | AX-04 | L0/L1 训练链 | 运行日志与自动验收 |
+| P0 | AX-05 | TaskSpec 与 Budget Controller | 强制规则、明确停止 |
+| P0 | AX-06 | L2 小实验 + Evaluate + Report | 新 MVP 端到端完成 |
+| P1 | AX-07 | Ablate / Reproduce 任务适配 | 复用同一个 Loop |
+| P1 | AX-08 | 低成本 T1/T2 对照评测 | 真实开销和质量数据 |
+| P2 | AX-09 | GPU Runner / 审批 / 恢复 | 稳定远程训练 |
 
-源码阅读应以 AXIOM **锁定的 Pi 子模块提交和 npm SDK 版本**为准；两者可能不同，必须检查导出类型及实际接口。
+## 9. 推荐本地评估顺序
 
-**阅读策略**：每读一个模块就回答一个问题，接着写最小验证代码；不要因为“源码没看完”而无限推迟开发。
+1. **先用已有仓库回归当前代码**，不要先大范围重构。
+2. 明确第一个 Tiny Task 的输入、固定模型、允许修改范围、评价脚本和 CPU 预算。
+3. 选择 Pi Extension 或 SDK 集成路径，验证工具能真实执行。
+4. 先只跑**一轮**真实模型修改与训练；证明评估闭环后再加多轮优化。
+5. 评估实际 Token/时间/GPU 成本，决定下一步架构拆分和远程执行计划。
 
-## 4. 实施路线
+### 可以直接运行的现有命令
 
-### 阶段 A — Pi 基础和 CLI 接入（建议第 1 周）
-
-- [ ] 在本机执行 `npm ci`、`npm run build`、`npm test`。
-- [ ] 执行现有 `import` / `export`，确认基础证据链正常。
-- [ ] 本地配置模型密钥，运行 `ask`，记录成功与失败轨迹（不提交密钥）。
-- [ ] 读通 Agent Loop、SDK 与 Extension 的调用链。
-- [ ] 在 `.pi/extensions/` 实现最小科研工具（例如 `research_workspace_info`）。
-- [ ] 通过 Pi 原生 CLI/TUI 调用扩展，看到真实的工具执行与结果返回。
-
-**验收**：一条真实的 Agent Tool Call 能读取指定工作区内的**非敏感项目元数据**，返回正确输出；工具失败也有可理解的错误提示。
-
-### 阶段 B — 科研工具与交互工作流（建议第 2–3 周）
-
-- [ ] 将现有 `importRuns` 和 `exportTable` 封装成单独的只读科研工具。
-- [ ] 设计 `list_runs`、`get_run`、`compare_runs`、`verify_evidence` 工具契约和输入约束。
-- [ ] 避免大快照直接进入上下文；按实验、指标、证据片段检索。
-- [ ] 实现首个 `experiment-compare` Skill，明确输入、验证步骤、报告格式。
-- [ ] 增加相同工具重复调用限制、输出长度限制和错误处理。
-- [ ] 实现终端中的任务过程展示：优先使用 Pi 自带事件/TUI。
-- [ ] 对合成实验完成一条端到端任务，生成证据化 Markdown 对比报告。
-
-**验收**：用户输入“对比两次示例实验并解释哪些结论有证据”，Agent 真实调用工具，报告能追溯到来源文件；不把未验证值包装为可信结论。
-
-### 阶段 C — Experiment Harness 深化（建议第 4–5 周）
-
-- [ ] 增加配置差异分析、评估口径及数据集一致性检查。
-- [ ] 实现 Research Context Assembler：研究任务、Run、Config、Evidence 的按需装配。
-- [ ] 为分析任务记录 `task_id`、工具轨迹、输入摘要、产物路径。
-- [ ] 定义 `planned / running / waiting_approval / completed / failed` 状态。
-- [ ] 将基础证据核验从“值相等”升级为来源哈希、评估元数据、指标口径等多层检查。
-- [ ] 补充失败测试：缺失产物、错误路径、跨目录读取、不同协议、重复 Run、错误模型输出。
-
-**验收**：一个固定合成任务集可重复评估；同样输入得到结构一致的证据表，错误场景能正确失败而不是幻觉补全。
-
-### 阶段 D — 远程 GPU Runner（建议第 6–8 周）
-
-- [ ] Python 独立 Runner：`submit / status / logs / cancel`。
-- [ ] 先支持本地模拟长任务，再支持 Windows → Linux SSH。
-- [ ] 以 `job_id` 实现幂等提交；重连时先核验远端状态。
-- [ ] 管理训练配置、进程状态、日志、Checkpoint 和产物路径。
-- [ ] GPU 预算、危险命令和终止任务需经确定性权限策略及人工审批。
-- [ ] 覆盖断网、进程崩溃、远端已提交但本地未收到回复等故障。
-- [ ] 按实际收益评估 Pi Durable；不能把 Agent 会话恢复误当作 GPU 进程恢复。
-
-**验收**：任务管理器退出后训练任务仍可被重新发现；重复提交不会启动第二份相同付费任务；不批准无法执行有成本或破坏性的动作。
-
-### 阶段 E — 文档、评测和后续界面（阶段性推进）
-
-- [ ] 以纯合成数据和脱敏截图公开演示。
-- [ ] 输出工具成功率、任务完成率、证据错误率、资源开销和恢复成功率。
-- [ ] 完善 README、模块设计、CLI 使用说明及架构决策记录。
-- [ ] CLI 主线稳定后，再决定复用同一 Harness 接 Web / Desktop。
-
-## 5. 推荐仓库结构
-
-```text
-AXIOM/
-├── README.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DEVELOPMENT.md
-│   └── CLI_DEVELOPMENT_PLAN.md      # 本文
-├── assets/
-│   └── axiom-cli-preview.svg        # 设计概念图
-├── .pi/
-│   ├── extensions/                 # 待开发：科研扩展
-│   └── skills/                     # 待开发：科研技能
-├── src/
-│   ├── cli.ts                      # 已有：import/export/ask
-│   ├── agent.ts                    # 已有：Pi SDK 快照问答
-│   ├── research.ts                 # 已有：实验导入与证据校验
-│   └── table.ts                    # 已有：表格导出
-├── packages/
-│   └── harness/                    # 未来：业务状态与上下文
-├── services/
-│   └── experiment-runner/          # 未来：远程 GPU Runner
-├── examples/
-│   └── synthetic-experiment/       # 公开合成实验
-├── tests/
-└── vendor/pi/                      # 已有：Pi 子模块
-```
-
-以上目录同时标明**已存在**与**计划新增**，不要将目标目录误认为现有实现。
-
-## 6. 下一次开工的具体步骤
-
-### 现有能力回归（现在就能做）
-
-```bash
+~~~bash
+git clone --recurse-submodules https://github.com/luming9494/AXIOM.git
+cd AXIOM
 npm ci
 npm run build
 npm test
 
-# import/export：当前已经实现
+# 先创建私有输出目录；输出文件必须不存在
+mkdir private
 npm run axiom -- import examples/synthetic-experiment/manifest.json private/registry.json
 npm run axiom -- export examples/synthetic-experiment/manifest.json private/comparison.md markdown
 
-# ask：当前已有 SDK 入口；需要本地有效模型凭据
-npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两次合成实验的差异"
-```
+# 需要在本地 .env 中有合法模型密钥；真实模型调用尚未核验
+npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两次示例实验"
+~~~
 
-> 请先创建 `private/` 目录；输出文件必须不存在。`private/` 应始终保持在 Git 忽略列表中。`ask` 目前不带工具，也不是交互会话。
+以上是**现有命令**。`axiom optimize / axiom reproduce / axiom ablate` 均为未来目标，不得当作已实现的 CLI 命令。
 
-### 目标命令（尚未实现）
+## 10. DoD：什么才叫真正完成 AXIOM 第一个 MVP？
 
-```bash
-axiom                   # 进入交互式科研 Agent
-axiom runs list         # 查询实验
-axiom runs compare      # 对比实验
-axiom evidence verify   # 核对证据
-axiom gpu status        # 查询可用 GPU
-axiom run submit --dry-run
-```
+- Agent 真实调用工具、读代码并产生有效修改；
+- 训练和评估真实发生，不靠伪造/模拟的日志宣称性能提升；
+- 预算规则能强制执行、越权操作会被阻止；
+- 有独立判题器确认最终模型与任务指标；
+- 能解释每一轮选择，保留可追溯产物；
+- 即使没有提高成绩，依然能按 `best_effort` 正确停止。
 
-建议 CLI 初期以 `pi` + AXIOM Extensions 作为交互入口，只有在确有必要时才提供独立 `axiom` 可执行命令。
-
-## 7. 第一批 Issue 建议
-
-| ID | Issue | 优先级 | 完成标准 |
-| --- | --- | --- | --- |
-| CLI-01 | 验证 Pi SDK 真正的模型请求 | P0 | 成功、报错、密钥脱敏可复现 |
-| CLI-02 | 完成第一个科研 Extension | P0 | Pi TUI 真实执行工具 |
-| CLI-03 | 封装已有实验查询工具 | P0 | 不再依靠整份 JSON 快照 |
-| CLI-04 | 加入科研 Experiment Compare Skill | P0 | 合成数据端到端报告 |
-| CLI-05 | Context Assembler 和工具预算 | P1 | 大日志场景也不溢出 |
-| CLI-06 | Scientific Evidence Validator 升级 | P1 | 错误来源可检测并可解释 |
-| CLI-07 | Runner 任务状态与远端恢复 | P1 | 故障注入通过 |
-| CLI-08 | Eval / Trace / 文档 | P1 | 可重复对照实验与公开演示 |
-
-## 8. 完成标准（Definition of Done）
-
-- **可运行**：`npm ci`、构建和测试通过，公开示例可复现。
-- **真 Agent**：不是模拟工具调用；有可检查的 Pi 工具事件与结果。
-- **可信证据**：报告指标都能追踪到原始文件；未核验信息不会变成“事实”。
-- **安全边界**：私有路径、凭据及危险写操作均有明确控制。
-- **可追溯**：每个任务记录其输入、执行路径、错误状态与产物。
-- **产品化**：CLI 能独立完成一个你实际会反复使用的科研任务。
-
----
-
-**本阶段唯一主线：先完成一个真实可工作的 AXIOM CLI 科研 Agent，再考虑 GPU 自动化和 Web / 桌面端。**
+**核心方向：先做出一个在有限预算内能自主完成小型 ML 工程任务的 AXIOM，然后再扩展论文复现、消融和远程 GPU。**
