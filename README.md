@@ -113,6 +113,8 @@ AXIOM/
 - **扩展能力**：Pi Extensions、Skills、MCP
 - **质量**：Node.js test runner + Playwright；后续添加 Python 测试与业务评测
 
+📌 **近期开发计划**：[CLI-first 开发路线（含 CLI 交互效果图）](docs/CLI_DEVELOPMENT_PLAN.md)。
+
 ## ✅ 开发路线
 
 - [ ] **MVP 0（部分完成）**：Pi SDK 快照问答已接入；待验证真实模型调用、实现自定义科研工具
