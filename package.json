@@ -15,10 +15,12 @@
     "test": "tsx --test tests/*.test.ts",
     "test:ml": "python -m unittest discover -s tests/python -v",
     "test:optimize-executor": "tsx --test tests/integration/single-optimize.test.ts",
+    "test:task-executor": "tsx --test tests/integration/budget-task.test.ts",
     "axiom": "tsx src/cli.ts"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "1.5.0",
+    "@earendil-works/pi-ai": "1.5.0",
     "diff": "8.0.4",
     "lucide-react": "^1.68.0",
     "react": "^19.3.1",

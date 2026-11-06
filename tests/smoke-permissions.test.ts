@@ -40,6 +40,7 @@ test('child environment excludes secrets and Python injection variables', () => 
     const env = childEnvironment(process.execPath, resolve('private'));
     assert.equal(env.AXIOM_TEST_SECRET, undefined);
     assert.equal(env.DEEPSEEK_API_KEY, undefined);
+    assert.equal(env.NVIDIA_API_KEY, undefined);
     assert.equal(env.PYTHONPATH, undefined);
     assert.equal(env.PYTHONDONTWRITEBYTECODE, '1');
   } finally { delete process.env.AXIOM_TEST_SECRET; }

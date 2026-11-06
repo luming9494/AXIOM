@@ -136,6 +136,8 @@ AXIOM 从“实验数据助手”转向**能完成 ML 任务的执行型 Agent**
 
 **WP-03 进度补充**：`src/agent/optimize-agent.ts` / `optimize-tools.ts` 复用 Pi SDK，`src/execution/single-optimize.ts` 负责固定 TaskSpec 与单轮状态。`run_baseline` / `run_candidate` 分开授权；`validate_only.py` 限制独立评估只生成 validation 数据。Agent 自主提出一次源码修改，在完整训练与独立重评估后提出 keep/revert，由程序核验并导出 `selected/`。首次真实运行验证准确率 0.5 → 0.998046875，另有真实 CPU 持平回退回归，见 [WP-03 记录](WP03_VALIDATION.md)。这**不代表**完整多轮 Experiment Loop、跨实验预算器、独立训练 Runner 或最终测试达标已实现；不开放任意 Python 项目或人工参考读取能力。
 
+**WP-04 进度补充**：`task-agent.ts` / `task-decision.ts` 用 Pi SDK 完成自然语言规格和候选方案提交，审核文件哈希后才进入执行。`task-controller.ts` 在模型会话之外管理串行多轮、缓存、历史最佳和停止；`task-budget.ts` 强制执行次数、单调墙钟、保守 Token 准入/usage、累计子进程时间与训练步数。`task-executor.ts` 驱动固定 CPU worker，独立 validation 完成后才更新 best。训练时没有模型会话等待或轮询，停止交付无需再调用模型。三轮真实验收和 CPU 反例见 [WP-04 记录](WP04_VALIDATION.md)。仍无任意项目适配、跨任务恢复、精确供应商计费保证、OS 内存/硬件隔离或 GPU 调度。
+
 ## 8. 本地技术评估的开放决定
 
 开发前应在本地跑通现有测试，然后回答：

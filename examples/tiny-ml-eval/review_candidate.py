@@ -65,6 +65,7 @@ def review_source(source):
         "kind": "mlp" if linear_count >= 2 and activation_count >= 1 else "linear",
         "linear_layers": linear_count, "activations": activation_count, "parameters": parameters,
         "model_sha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
+        "architecture_sha256": hashlib.sha256(ast.dump(expression, include_attributes=False).encode("utf-8")).hexdigest(),
     }
 
 

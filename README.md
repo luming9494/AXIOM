@@ -15,7 +15,7 @@
 </div>
 
 > **项目状态：Early Prototype / 需求已明确，完整执行型 Agent 尚未实现。**  
-> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**WP-02 已验证真实读/改代码与 Smoke；WP-03 已验证单候选自主改进、完整 Tiny Task 训练、独立验证和指标驱动的保留/回退。多轮实验预算、完整任务交付和 GPU 调度仍待开发。**
+> 目前已有离线实验数据导入、简单指标来源核验、Markdown/CSV/LaTeX 导出，以及接入了 Pi SDK 的**无工具快照问答入口**（真实模型请求仍需本地验证）。另有一个未连接 Agent 后端的离线 React Web 原型。**WP-02 已验证真实读/改代码与 Smoke；WP-03 已验证单候选自主改进、完整 Tiny Task 训练、独立验证和指标驱动的保留/回退。WP-04 已验证自然语言规格审核、最多三轮实验、确定性预算/停止与历史最佳交付；通用项目适配、更全面的故障恢复和 GPU 调度仍待开发。**
 
 ## What is AXIOM?
 
@@ -71,7 +71,7 @@ AXIOM Experiment Loop
 | Agent 读/改代码并运行 Smoke | ✅ WP-02 真实 Pi Tool Calling 已验证；含越界写入/非法命令拒绝，见[实测记录](docs/WP02_VALIDATION.md) |
 | Agent 自主提出单候选、完整训练与独立验证 | ✅ WP-03 已实测；只使用 validation，见[实测记录](docs/WP03_VALIDATION.md) |
 | 指标驱动的保留/回退 | ✅ 单候选已实现；无提升回退有真实 CPU 回归，不代表完整预算系统 |
-| 多轮实验、任务级预算与停止策略 | ⬜ WP-04 待实现 |
+| 自然语言任务、有限多轮与任务预算 | ✅ WP-04 Tiny Task 已实测；规格先审核，预算/停止/最佳由代码执行，见[实测记录](docs/WP04_VALIDATION.md) |
 | Optimize / Reproduce / Ablate 完整工作流 | ⬜ 尚未实现 |
 | 远程 GPU Runner、审批和恢复 | ⬜ 尚未实现 |
 
@@ -102,6 +102,25 @@ npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较这两�
 
 该入口目前仍是**将数据快照发送给模型的单次问答**，不是能改代码/跑训练的 Agent。真实模型调用尚需在本地验证；请勿把 API Key、私有论文数据或日志提交到 GitHub。
 
+## 模型配置：默认 DeepSeek 官方
+
+所有模型入口（问答、Smoke、单轮、多轮任务）默认直接使用 DeepSeek 官方 API，按量计费，不先尝试 NIM。在本地 `.env` 配置：
+
+```dotenv
+AXIOM_MODEL_PROVIDER=deepseek
+DEEPSEEK_API_KEY=填写DeepSeek官方Key
+DEEPSEEK_MODEL=deepseek-flash
+AXIOM_MODEL_TIMEOUT_SECONDS=120
+```
+
+已有 `.env` 时保留原 Key，不要整份覆盖。没有设置供应商时也默认官方；只配 NIM Key 不能让程序擅自切到 NIM。Key 不进 Git 或训练环境，不需要 Python `openai` SDK。
+
+NIM 保留为可选项：显式设置 `AXIOM_MODEL_PROVIDER=nvidia-nim` 并配置 `NVIDIA_API_KEY` 后才会尝试。此时仍支持之前的“明确额度耗尽 → 官方备用”策略，可用 `AXIOM_DEEPSEEK_FALLBACK=false` 关闭。默认官方模式不会自动回到 NIM。
+
+备用调用也须通过请求次数、Token、墙钟等现有门禁；明确额度拒绝的 NIM 请求按完整预留 Token 保守记账，剩余额度不足则停止，不继续请求官方。不因回退重跑实验。供应商变更与付费标记写入日志，官方失败不继续自动重试。详见 [双供应商回退](docs/MODEL_PROVIDERS.md)。
+
+NIM 普通对话曾真实返回 HTTP 200 / `AXIOM_OK`（约59.5秒）；随后真实工具验收在约60秒处失败，另一次尝试被用户中止，未完成 NIM 端到端 Agent 验收。不能把普通对话成功当成 Agent 成功。按用户决定恢复官方默认；此次切换没有发起新的付费调用。历史 WP-02/03/04 的真实工作流成绩来自官方接口。
+
 ## WP-02：真实工具调用验收
 
 ```bash
@@ -114,7 +133,7 @@ Pi 模型会实际读取线性模型、在新的候选副本中编辑 MLP、运�
 ## WP-03：单候选自主优化
 
 ```bash
-# 显式发起付费模型调用与可信 Tiny Task 受限代码执行
+# 显式发起模型调用与可信 Tiny Task 受限代码执行（默认官方，按量计费）
 npm run axiom -- optimize-once --allow-reviewed-code
 
 # 可选：真实 CPU 回退回归，不调用 LLM；需要 CPU PyTorch
@@ -124,6 +143,22 @@ npm run test:optimize-executor
 Agent 读取规则和真实线性 Baseline，自行生成一个候选，先 Smoke 再完整训练；通过独立 validation 指标提出保留/回退，程序拒绝与真实指标冲突的决定。不开放人工参考文件、最终测试或第二轮训练。配置固定只读，仅允许编辑候选 `model.py`，不是任意代码沙箱。
 
 首次真实运行的验证准确率从 **50.00% → 99.8047%**，程序保留候选；这不是最终测试成绩或统计显著性结论。产物在 `private/wp03-*`，交付为 `selected/`，事实依据为 `summary.json` / `report.md`。没有提升时可如实回退并交付 Baseline。详见 [WP-03 实测记录](docs/WP03_VALIDATION.md)。
+
+## WP-04：直接交付一个有预算的任务
+
+```bash
+# 交互终端：输入自然语言，审核规格后确认执行
+npm run axiom
+
+# 非交互：先用真实模型生成待审核规格，不训练
+npm run axiom -- task "优化当前 Tiny Task，最多三组候选，禁止预训练，验证准确率达到95%就停，交付最佳模型和报告"
+# 按输出的路径/哈希显式批准，才开始真实执行
+npm run axiom -- task --approve private/wp04-XXXXXX/task-spec.json --sha256 <审核哈希> --allow-reviewed-code
+```
+
+模型只提出方案，宿主负责执行训练。每轮独立验证、缓存相同条件的成功结果，后续变差也保留历史最佳；达到验证目标、预算耗尽或失败后停止并交付 `best_model.pt`、源码、`experiments.json` 和 `report.md`。没有合法模型时如实报告，不伪造权重。
+
+首次真实运行完成三轮候选，达到次数上限后自动停止，交付第一个并列最佳。预算包括候选次数、墙钟、Token 准入/usage 账本、累计子进程时间和训练步数；计算资源只限单线程 CPU，非精确硬件计量或 OS 沙箱。规划也消耗模型平台额度；自然语言翻译必须人工审核。当前只支持可信 Tiny Task，不是任意当前仓库。详见 [WP-04 实测记录](docs/WP04_VALIDATION.md)。
 
 ## 开发路线
 
@@ -147,6 +182,7 @@ Agent 读取规则和真实线性 Baseline，自行生成一个候选，先 Smok
 - **[新 MVP 实施计划](docs/IMPLEMENTATION_PLAN.md)** — WP-02 真实操作验收 → WP-03 单轮自主优化 → WP-04 多轮与预算。
 - **[WP-02 实测记录](docs/WP02_VALIDATION.md)** — 真实 Pi 工具链、代码修改、Smoke 产物、权限拒绝及已知限制。
 - **[WP-03 实测记录](docs/WP03_VALIDATION.md)** — 自主单候选、独立验证、真实提升与无提升回退测试。
+- **[WP-04 实测记录](docs/WP04_VALIDATION.md)** — 自然语言 TaskSpec 审核、三轮真实候选、预算、去重与历史最佳交付。
 - **[低成本评测计划](docs/EVALUATION.md)** — T1/T2/T3 小任务与指标、基线、资源公平性。
 - **[现有代码开发说明](docs/DEVELOPMENT.md)** — 当前实际可运行命令及 Web 原型的限制。
 

@@ -1,8 +1,8 @@
 # 本地开发（当前已实现功能）
 
-> **当前文档记录的是已经存在的离线原型，不是 AXIOM 未来的完整 Agent。**  
+> **当前文档记录已有离线基础与 Tiny Task 执行入口，不是通用完整 Agent 的能力承诺。**
 > 项目需求已调整为自主机器学习工程 Agent：能在明确规则与资源预算下**读代码、改代码、跑训练、评估与迭代**。新目标请先看 [产品需求](PRODUCT_REQUIREMENTS.md)、[架构](ARCHITECTURE.md)、[CLI 里程碑](CLI_DEVELOPMENT_PLAN.md)、[低成本评测](EVALUATION.md)。  
-> 原有 `src/agent.ts` 的 `ask` 入口仍为 `tools: []` 的快照问答；`src/agent/smoke-agent.ts` 为 WP-02 受限 Smoke 验收入口，`src/agent/optimize-agent.ts` 为已实测的 WP-03 单候选自主训练/验证入口；尚非完整多轮 Optimize。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
+> 原有 `src/agent.ts` 的 `ask` 入口仍为 `tools: []` 的快照问答；`src/agent/smoke-agent.ts` 为 WP-02 受限 Smoke 验收入口，`src/agent/optimize-agent.ts` 为已实测的 WP-03 单候选自主训练/验证入口；`src/agent/task-agent.ts` 为 WP-04 自然语言审核/有限多轮入口，已在可信 Tiny Task 实测，尚非通用项目 Optimize。之前已有的实验数据导入、表格导出和 Web 离线预览继续保留，但开发主线优先 CLI，Web 暂缓。
 
 
 要求 Node.js >=22.19.0，安装依赖后运行：
@@ -70,11 +70,11 @@ npm test
 # 有 CPU PyTorch 的 Python 环境下运行
 npm run test:ml
 
-# 显式启动真实模型调用和受限代码执行，会产生 API 费用
+# 显式启动模型调用和受限代码执行，默认官方按量计费
 npm run axiom -- smoke-agent --allow-reviewed-code
 ```
 
-需要本地 `DEEPSEEK_API_KEY` 与 `.venv` Python；可用 `AXIOM_PYTHON` 指定其他解释器。候选工作区自动创建在 `private/wp02-*`。只开放五个受限工具，文件写入限于候选 `model.py`，执行动作限于 L0/Smoke，执行前以 AST 白名单限制简单 Sequential 模型；不开放任意 Shell、不继承模型密钥到训练进程。该模式不是 OS 安全沙箱，只用于可信公开任务。
+需要本地 `DEEPSEEK_API_KEY`（默认官方）与 `.venv` Python；可用 `AXIOM_PYTHON` 指定其他解释器。候选工作区自动创建在 `private/wp02-*`。只开放五个受限工具，文件写入限于候选 `model.py`，执行动作限于 L0/Smoke，执行前以 AST 白名单限制简单 Sequential 模型；不开放任意 Shell、不继承模型密钥到训练进程。该模式不是 OS 安全沙箱，只用于可信公开任务。
 
 运行后查看 `report.md`、`summary.json`、`patch.diff`、`pi-events.jsonl`、`operations.jsonl` 及 `smoke/`。自然语言回复可能有路径错误，产物位置以程序报告为准。验收未满足时命令失败并保留轨迹。完整说明见 [WP-02 实测记录](WP02_VALIDATION.md)。
 
@@ -86,7 +86,7 @@ WP-02 本身仅证明真实操作链；单候选自主优化见下一节，多�
 # 有真实 CPU 训练开销，无 LLM/API 调用，默认 npm test 不执行此项
 npm run test:optimize-executor
 
-# 有模型 API 费用；显式授权可信 Tiny Task 的受限代码执行
+# 默认调用官方付费接口；显式授权可信 Tiny Task 的受限代码执行
 npm run axiom -- optimize-once --allow-reviewed-code
 ```
 
@@ -98,9 +98,38 @@ WP-03 只允许一次接受的 `model.py` 编辑，配置固定只读。先训�
 
 首次真实验收验证准确率 0.5 → 0.998046875，程序保留模型；另有真实 CPU 持平回退回归。不是最终测试达标声明，也未验证统计显著性。不做多轮、GPU、完整预算或任意代码沙箱。详见 [WP-03 实测记录](WP03_VALIDATION.md)。
 
+## WP-04：自然语言与预算任务
+
+```bash
+# 交互终端输入任务，先审查规格再确认执行
+npm run axiom
+# 非交互规划（默认官方按量计费，但不训练）
+npm run axiom -- task "优化 Tiny Task，最多三组候选，禁止预训练，验证达到95%就停，交付最佳模型和报告"
+# 审核路径与哈希后才执行
+npm run axiom -- task --approve private/wp04-XXXXXX/task-spec.json --sha256 <审核哈希> --allow-reviewed-code
+
+# 无 LLM 的真实 CPU 去重/退化/达标/计算时限回归，默认 npm test 不执行
+npm run test:task-executor
+```
+
+只支持可信 Tiny Task，配置只读；自然语言不能解除代码策略。不支持的需求应拒绝，翻译错误由用户在 TaskSpec 审核时发现并修正。审批哈希绑定内容，一次性锁防止重复启动；未实现跨任务缓存或崩溃恢复。
+
+`max_experiments` 只计候选尝试，Baseline 也消耗时间、计算与训练步数。模型只交候选源码/理由，预算、去重、最佳和停止由宿主决定。Token 采用请求前保守预留与 SDK usage 结算，缺失/超预留则停止，不承诺供应商绝对计费硬上限。计算额度是单线程 CPU 子进程 elapsed 与训练步数，不是精确 CPU-seconds、内存隔离或 GPU 配额。
+
+产物位于 `private/wp04-*`：`best_model.pt`、匹配的 `model.py/config.json`、完整 `best/` 快照、`experiments.json`、`report.md` 与调用/命令证据。无合法结果时不伪造权重。真实三轮运行与反例边界见 [WP-04 实测记录](WP04_VALIDATION.md)。
+
 ## Pi 问答
 
-将 `.env.example` 复制为本地 `.env` 并填写 `DEEPSEEK_API_KEY`，默认使用官方 `deepseek-flash`（按量收费）。`.env` 已被 Git 忽略；已有本地配置时无需覆盖。然后运行：
+默认模型接口已恢复为 DeepSeek 官方，所有入口直接调用官方，不先尝试 NIM。新建本地 `.env` 时可参考 `.env.example`；已有文件请手动追加，保留其他配置：
+
+```dotenv
+AXIOM_MODEL_PROVIDER=deepseek
+DEEPSEEK_API_KEY=填写官方Key
+DEEPSEEK_MODEL=deepseek-flash
+AXIOM_MODEL_TIMEOUT_SECONDS=120
+```
+
+所有模型入口复用 `src/agent/model-provider.ts`，使用 Pi 的 `openai-completions` 实现，无需 Python `openai` 包。默认官方按量计费；如确需 NIM，显式设 `AXIOM_MODEL_PROVIDER=nvidia-nim` 并提供 `NVIDIA_API_KEY`。该可选模式仍支持明确额度耗尽后的官方备用，可设 `AXIOM_DEEPSEEK_FALLBACK=false` 禁用。官方模式不自动切回 NIM。临时限流/超时/认证失败不切换；回退受原请求/Token/墙钟门禁控制，明确拒绝按预留保守计账，详见 [供应商回退](MODEL_PROVIDERS.md)。`.env` 已被 Git 忽略，子进程不继承 API Key。免费开发额度、限流与模型可用性以 NVIDIA 平台为准；SDK 零成本字段是占位，不是实付账单。NIM 普通对话曾返回 HTTP 200 / AXIOM_OK；真实工具尝试约60秒失败，随后另一次尝试被用户中止，没有完成 NIM 端到端验收。单请求默认120秒并脱敏记录底层错误，仍受总任务预算约束。历史 WP 实测仍代表原官方接口。模型供应商/地址/模型/付费备用配置变化后，应重新生成并审核 TaskSpec。然后运行：
 
 ```bash
 npm run axiom -- ask examples/synthetic-experiment/manifest.json "比较实验差异"
